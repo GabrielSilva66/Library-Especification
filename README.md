@@ -1,85 +1,85 @@
-# Sistema de Biblioteca — Especificação Algébrica Formal
+# Library System — Formal Algebraic Specification
 
-Projeto prático desenvolvido para a disciplina **Estruturas Algébricas (DIM0167)** da Universidade Federal do Rio Grande do Norte (**UFRN**), ministrada pelo **Prof. Valdigleis S. Costa**.
-
----
-
-## 1. Visão Geral do Projeto
-
-O objetivo deste projeto é aplicar os conceitos de **estruturas algébricas**, **lógica equacional** e **sistemas de reescrita de termos** na especificação formal de um **Sistema de Biblioteca**.
-
-O foco é a construção de um modelo matemático abstrato, rigoroso e consistente, definindo:
-- **Sorts e Subsorts** (universos de termos / tipos);
-- **Operadores Construtores** (que geram as estruturas canônicas do sistema, como monóides comutativos);
-- **Operadores Definidos / Observadores** (consultas e predicados sobre o estado);
-- **Equações e Regras de Transição** (que governam as mudanças de estado e preservam os invariantes);
-- **Tratamento de Operações Inválidas e Casos de Fronteira**.
+Practical project developed for the **Algebraic Structures (DIM0167)** course at the Federal University of Rio Grande do Norte (**UFRN**), taught by **Prof. Valdigleis S. Costa**.
 
 ---
 
-## 2. O Domínio do Sistema (Biblioteca)
+## 1. Project Overview
 
-O sistema gerencia um acervo bibliográfico e os empréstimos realizados por usuários registrados:
+The objective of this project is to apply concepts from **algebraic structures**, **equational logic**, and **term rewriting systems** in the formal specification of a **Library System**.
 
-### Entidades e Conceitos Principais
-- **Identificadores Únicos**: `LivroId` e `UsuarioId`.
-- **Acervo**: Coleção algébrica dos livros pertencentes à biblioteca.
-- **Usuários**: Coleção algébrica dos usuários cadastrados.
-- **Empréstimos**: Relação algébrica que associa um livro a um usuário mutuamente.
-- **Biblioteca**: O estado consolidado do sistema contendo o acervo, a base de usuários e os empréstimos ativos.
-
-### Regras de Negócio Fundamentais
-1. Um livro só pode ser emprestado se pertencer ao acervo da biblioteca.
-2. Um livro não pode ser emprestado se já estiver emprestado a qualquer usuário.
-3. A devolução de um livro torna-o imediatamente disponível no acervo.
-4. Um usuário só pode devolver um livro que de fato esteja emprestado a ele.
-5. A remoção de um livro do acervo só é permitida se o livro estiver disponível (não emprestado).
-6. A identificação de cada livro e de cada usuário deve ser única.
-7. Conservação de cardinalidade: $\text{Livros Disponíveis} + \text{Livros Emprestados} = \text{Total no Acervo}$.
+The main focus is the construction of an abstract, rigorous, and consistent mathematical model defining:
+- **Sorts and Subsorts** (universes of discourse / types);
+- **Constructor Operators** (which generate canonical structures, such as commutative monoids);
+- **Defined Operators / Observers** (queries and state predicates);
+- **Equations and State Transition Rules** (which govern state updates and maintain system invariants);
+- **Handling of Invalid Operations and Edge Cases**.
 
 ---
 
-## 3. Ferramenta Utilizada
+## 2. System Domain (Library)
 
-- **Linguagem / Sistema**: [CafeOBJ](https://cafeobj.org/) (versão 1.6.2).
-- **Paradigma**: Especificação algébrica baseada em Lógica Equacional e Lógica Oculta (Hidden Algebra / Rewriting Logic).
+The system manages a library collection and book loans made by registered users:
+
+### Key Entities and Concepts
+- **Unique Identifiers**: `LivroId` (Book ID) and `UsuarioId` (User ID).
+- **Collection (Acervo)**: Algebraic collection of books belonging to the library.
+- **Users (Usuarios)**: Algebraic collection of registered users.
+- **Loans (Emprestimos)**: Algebraic relation associating a book with a borrower.
+- **Library (Biblioteca)**: The consolidated state of the system encompassing the book collection, registered users, and active loans.
+
+### Fundamental Business Rules
+1. A book cannot be borrowed if it does not belong to the library collection.
+2. A book cannot be borrowed if it is already on loan to any user.
+3. Returning a book makes it immediately available in the collection.
+4. A user can only return a book that is currently on loan to them.
+5. Removing a book from the collection is only permitted when the book is available (not loaned out).
+6. Identifiers for books and users must be unique.
+7. Cardinality conservation: $\text{Available Books} + \text{Loaned Books} = \text{Total Books in Collection}$.
 
 ---
 
-## 4. Estrutura do Repositório
+## 3. Tooling
+
+- **Language / System**: [CafeOBJ](https://cafeobj.org/) (version 1.6.2).
+- **Paradigm**: Algebraic specification based on Equational Logic and Hidden Algebra / Rewriting Logic.
+
+---
+
+## 4. Repository Structure
 
 ```text
 .
-├── README.md               # Apresentação e guia do projeto
-├── spec.md                 # Planejamento formal, arquitetura e checklist de tarefas
-├── Trabalho-Pratico.pdf    # Especificação do trabalho prático (DIM0167)
-├── spec/                   # Especificações formais em CafeOBJ (.mod / .cafe)
-│   ├── identificadores.mod # Sorts fundamentais (LivroId, UsuarioId)
-│   ├── acervo.mod          # Monóide do acervo e operações de livros
-│   ├── usuarios.mod        # Gestão e pertinência de usuários
-│   ├── emprestimo.mod      # Relações de empréstimo e pendências
-│   ├── biblioteca.mod      # Estado global da biblioteca e transições
-│   └── demo.cafe           # Testes experimentais e reescrita de termos
-└── ref/                    # Materiais de referência e exemplos do curso
-    ├── Banco/              # Exemplo de especificação bancária em CafeOBJ
+├── README.md               # Project presentation and documentation
+├── spec.md                 # Formal planning, architecture, and task checklist
+├── Trabalho-Pratico.pdf    # Practical assignment specification (DIM0167)
+├── spec/                   # Formal specifications in CafeOBJ (.mod / .cafe)
+│   ├── identificadores.mod # Core sorts (LivroId, UsuarioId)
+│   ├── acervo.mod          # Collection monoid and book operations
+│   ├── usuarios.mod        # User management and registration checks
+│   ├── emprestimo.mod      # Loan relationships and pending items
+│   ├── biblioteca.mod      # Global library state and transitions
+│   └── demo.cafe           # Experimental tests and term rewriting
+└── ref/                    # Reference materials and course examples
+    ├── Banco/              # Banking specification example in CafeOBJ
     └── cafeobj_apresentacao.pdf
 ```
 
 ---
 
-## 5. Como Executar a Especificação
+## 5. How to Run the Specification
 
-### Pré-requisitos
-Ter o CafeOBJ instalado no ambiente (verifique com `cafeobj --version` ou `which cafeobj`).
+### Prerequisites
+CafeOBJ installed and accessible in your shell environment (verify with `cafeobj --version` or `which cafeobj`).
 
-### Execução Interativa
-Abra o CafeOBJ no diretório do projeto ou carregue o módulo desejado:
+### Interactive Execution
+Launch CafeOBJ in the project directory and load the desired modules:
 
 ```bash
 cafeobj
 ```
 
-Dentro do shell interativo:
+Inside the interactive shell:
 ```cafeobj
 CafeOBJ> in spec/identificadores.mod .
 CafeOBJ> in spec/acervo.mod .
@@ -89,8 +89,8 @@ CafeOBJ> in spec/biblioteca.mod .
 CafeOBJ> in spec/demo.cafe .
 ```
 
-### Execução em Lote (Batch)
-Para processar os testes e reduções diretamente via terminal:
+### Batch Execution
+To run tests and reductions directly from the terminal:
 
 ```bash
 cafeobj -batch spec/demo.cafe
