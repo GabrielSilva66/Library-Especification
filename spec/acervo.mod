@@ -1,5 +1,7 @@
 in identificadores.mod
+in livro.mod
 
+-- TODO: usar LIVRO no lugar do identificador
 
 mod! ACERVO {
   protecting(NAT)
