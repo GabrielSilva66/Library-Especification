@@ -1,10 +1,8 @@
 -- ============================================================
 -- demo.cafe: Exemplos práticos e testes de reescrita
--- Módulos testados: LIVRO e ACERVO
 --
 -- Para executar:
---   cd spec
---   cafeobj -batch demo.cafe
+--  cafeobj -batch demo.cafe
 -- ============================================================
 in acervo.mod
 
@@ -24,11 +22,11 @@ open ACERVO .
 
   eq livro1 = livro(l1, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
   eq livro2 = livro(l2, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
-  eq livro3 = livro(l3, obCC,  "Clean Code",           "Robert C. Martin",    2008) .
+  eq livro3 = livro(l3, obCC,  "Clean Code",            "Robert C. Martin",    2008) .
   eq livro4 = livro(l4, obComp,"Compiladores",          "Alfred Aho",          2006) .
   eq livroInvalido = livro(l1, obAlg, "", "", 0) .
 
-  -- Acervo de Teste (Graças ao subsort Livro < Acervo, os livros são justapostos diretamente!)
+  -- Acervo de Teste 
   op acervoTeste : -> Acervo .
   eq acervoTeste = livro1 livro2 livro3 livro4 .
 
