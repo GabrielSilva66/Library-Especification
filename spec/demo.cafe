@@ -1,0 +1,116 @@
+-- ============================================================
+-- demo.cafe: Exemplos práticos e testes de reescrita
+-- Módulos testados: LIVRO e ACERVO
+--
+-- Para executar:
+--   cd spec
+--   cafeobj -batch demo.cafe
+-- ============================================================
+in acervo.mod
+
+open ACERVO .
+
+  -- Identificadores atômicos para testes
+  ops l1 l2 l3 l4 lInexistente : -> LivroId .
+  ops obAlg obCC obComp        : -> ObraId .
+
+  -- Exemplares de Livros
+  -- Nota: l1 e l2 são dois exemplares físicos diferentes da MESMA obra (obAlg)
+  op livro1 : -> Livro .
+  op livro2 : -> Livro .
+  op livro3 : -> Livro .
+  op livro4 : -> Livro .
+  op livroInvalido : -> Livro .
+
+  eq livro1 = livro(l1, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
+  eq livro2 = livro(l2, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
+  eq livro3 = livro(l3, obCC,  "Clean Code",           "Robert C. Martin",    2008) .
+  eq livro4 = livro(l4, obComp,"Compiladores",          "Alfred Aho",          2006) .
+  eq livroInvalido = livro(l1, obAlg, "", "", 0) .
+
+  -- Acervo de Teste (Graças ao subsort Livro < Acervo, os livros são justapostos diretamente!)
+  op acervoTeste : -> Acervo .
+  eq acervoTeste = livro1 livro2 livro3 livro4 .
+
+  -- ============================================================
+  -- PARTE 1: Testes da Entidade LIVRO (Projeções e Validação)
+  -- ============================================================
+
+  -- (1.1) Extrair o título do livro 1:
+  red titulo(livro1) .
+
+  -- (1.2) Extrair a obra/ISBN do livro 1:
+  red obra(livro1) .
+
+  -- (1.3) Validar livro com dados corretos (deve retornar true):
+  red valido?(livro1) .
+
+  -- (1.4) Validar livro com campos vazios e ano zero (deve retornar false):
+  red valido?(livroInvalido) .
+
+  -- ============================================================
+  -- PARTE 2: Consultas e Cardinalidade no ACERVO
+  -- ============================================================
+
+  -- (2.1) Quantidade total de exemplares físicos no acervo (esperado: 4):
+  red qtdAcervo(acervoTeste) .
+
+  -- (2.2) Quantidade de exemplares da obra 'obAlg' (esperado: 2 cópias):
+  red qtdExemplaresObra(obAlg, acervoTeste) .
+
+  -- (2.3) Quantidade de exemplares de 'Clean Code' (esperado: 1 cópia):
+  red qtdExemplaresObra(obCC, acervoTeste) .
+
+  -- ============================================================
+  -- PARTE 3: Pertinência e Busca por ID (com Tratamento de Erro)
+  -- ============================================================
+
+  -- (3.1) O exemplar l1 pertence ao acervo? (esperado: true):
+  red pertenceAcervo?(l1, acervoTeste) .
+
+  -- (3.2) Um identificador que não foi cadastrado pertence ao acervo? (esperado: false):
+  red pertenceAcervo?(lInexistente, acervoTeste) .
+
+  -- (3.3) Buscar livro existente (retorna o próprio termo do Livro):
+  red buscarLivro(l3, acervoTeste) .
+
+  -- (3.4) Buscar livro inexistente (caso inválido: retorna livroInexistente do supersort):
+  red buscarLivro(lInexistente, acervoTeste) .
+
+  -- ============================================================
+  -- PARTE 4: Filtros por Título e por Autor
+  -- ============================================================
+
+  -- (4.1) Filtrar todos os livros com título "Compiladores":
+  red buscarTitulo("Compiladores", acervoTeste) .
+
+  -- (4.2) Filtrar acervo por autor "Valdigleis S. Costa" (esperado: 2 exemplares):
+  red qtdAcervo(tituloDeAutor("Valdigleis S. Costa", acervoTeste)) .
+
+  -- ============================================================
+  -- PARTE 5: Remoção de Exemplar do Acervo
+  -- ============================================================
+
+  -- (5.1) Remover o exemplar l2 (a quantidade deve cair de 4 para 3):
+  red qtdAcervo(removerDoAcervo(l2, acervoTeste)) .
+
+  -- (5.2) Após remover l2, a obra 'obAlg' agora possui apenas 1 exemplar:
+  red qtdExemplaresObra(obAlg, removerDoAcervo(l2, acervoTeste)) .
+
+  -- (5.3) Tentar remover um exemplar que não existe (acervo permanece inalterado):
+  red qtdAcervo(removerDoAcervo(lInexistente, acervoTeste)) .
+
+  -- ============================================================
+  -- PARTE 6: Invariantes de Consistência do Sistema
+  -- ============================================================
+
+  -- (6.1) Todos os livros do acervo de teste são válidos? (esperado: true):
+  red todosValidos?(acervoTeste) .
+
+  -- (6.2) Os identificadores do acervo são estritamente únicos? (esperado: true):
+  red idsUnicos?(acervoTeste) .
+
+  -- (6.3) Teste de violação de unicidade (adicionando livro1 duplicado no acervo):
+  red idsUnicos?(livro1 acervoTeste) .
+
+close
