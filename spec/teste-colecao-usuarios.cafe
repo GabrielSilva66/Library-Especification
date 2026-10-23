@@ -1,0 +1,26 @@
+-- ============================================================
+-- teste-colecao-usuarios.cafe: Testes do módulo COLECAO-USUARIOS
+--
+-- Para executar:
+--  cafeobj -batch teste-colecao-usuarios.cafe
+-- ============================================================
+
+in colecao-usuarios.mod
+
+open COLECAO-USUARIOS .
+
+  ops u1 u2 : -> UsuarioId .
+
+  -- Teste 1: Adição de usuários
+  red usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com") .
+  
+  -- Teste 2: Pertinência
+  red pertence?(u1, usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == true .
+
+  -- Teste 3: Remoção de usuário
+  red removerUsuario(u1, usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == usuario(u2, "Bia", "b@b.com") .
+
+  -- Teste 4: Contagem de usuários
+  red qtdUsuarios(usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == 2.
+
+close

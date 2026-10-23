@@ -5,7 +5,7 @@ in emprestimos.mod
 
 mod! BIBLIOTECA {
   protecting(ACERVO)
-  protecting(USUARIOS)
+  protecting(USUARIO)
   protecting(EMPRESTIMOS)
 
   [ Biblioteca ]

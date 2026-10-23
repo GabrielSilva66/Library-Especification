@@ -3,7 +3,7 @@
 -- ============================================================
 in identificadores.mod
 
-mod! USUARIOS {
+mod! USUARIO {
   protecting(BOOL)
   protecting(STRING)                                                                                                                                         
   protecting(IDENTIFICADORES)
