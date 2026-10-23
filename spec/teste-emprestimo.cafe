@@ -1,0 +1,62 @@
+-- ============================================================
+-- teste-emprestimo.cafe: Testes do módulo EMPRESTIMO
+--
+-- Para executar:
+--  cafeobj -batch teste-emprestimo.cafe
+-- ============================================================
+
+in emprestimo.mod
+
+open EMPRESTIMO .
+
+    -- Declaração de constantes locais para testes
+    ops l1 l2 l3 : -> LivroId .
+    ops u1 u2    : -> UsuarioId .
+
+    -- ----------------------------------------------------------
+    -- TESTE 1: Propriedade de idempotência
+    -- ----------------------------------------------------------
+
+    -- Elemento neutro (semEmprestimo) não altera a coleção
+    red emprestar(l1, u1) semEmprestimo == emprestar(l1, u1) .
+
+    -- ----------------------------------------------------------
+    -- TESTE 2: Predicado de consulta (emprestado?)
+    -- ----------------------------------------------------------
+
+    -- Verificar se livro presente na coleção é reconhecido como emprestado
+    red emprestado?(l1, (emprestar(l1, u1)) (emprestar(l2, u2))) == true .
+
+    -- Verificar se livro ausente retorna false
+    red emprestado?(l3, (emprestar(l1, u1)) (emprestar(l2, u2))) == false .
+
+    -- ----------------------------------------------------------
+    -- TESTE 3: Predicado de consulta (temLivro?)
+    -- ----------------------------------------------------------
+
+    -- O usuário u1 possui o livro l1
+    red temLivro?(u1, l1, (emprestar(l1, u1)) (emprestar(l2, u2))) == true .
+
+    -- O usuário u1 NÂO possui o livro l2
+    red temLivro?(u1, l2, (emprestar(l1, u1)) (emprestar(l2, u2))) == false .
+
+    -- ----------------------------------------------------------
+    -- TESTE 4: Operação de devolução
+    -- ----------------------------------------------------------
+
+    -- Devolver o livro l1 remove apenas o par correspondente, mantendo l2
+    red devolver(l1, (emprestar(l1, u1)) (emprestar(l2, u2))) == emprestar(l2, u2) .
+
+    -- Tentar devolver livro que não está emprestado (l3) preserva a coleção intacta
+    red devolver(l3, (emprestar(l1, u1)) (emprestar(l2, u2))) == (emprestar(l1, u1)) (emprestar(l2, u2)) .
+
+    -- ----------------------------------------------------------
+    -- TESTE 5: Operador de contagem
+    -- ----------------------------------------------------------
+    -- Quantidade em conjunto vazio
+    red qtdEmprestimos(semEmprestimo) == 0 .
+
+    -- Quantidade em coleção com 3 empréstimos ativos
+    red qtdEmprestimos((emprestar(l1, u1)) (emprestar(l2, u2)) (emprestar(l3, u1))) == 3 .
+
+close

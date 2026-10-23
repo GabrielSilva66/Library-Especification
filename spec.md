@@ -57,13 +57,13 @@ Lista estruturada diretamente a partir dos requisitos exigidos no documento ofic
 - [ ] Remover um livro do acervo (`removerLivro`)
 - [ ] Registrar um usuário (`registrarUsuario`)
 - [ ] Remover um usuário (`removerUsuario`)
-- [ ] Realizar o empréstimo de um livro (`emprestar`)
-- [ ] Realizar a devolução de um livro (`devolver`)
+- [x] Realizar o empréstimo de um livro (`emprestar` em `emprestimo.mod`)
+- [x] Realizar a devolução de um livro (`devolver` em `emprestimo.mod`)
 - [x] Verificar se determinado livro pertence ao acervo (`pertenceAcervo?` em `acervo.mod`)
 - [ ] Verificar se determinado livro está disponível (`disponivel?` em `biblioteca.mod`)
-- [ ] Verificar se determinado usuário possui determinado livro (`usuarioTemLivro?` em `emprestimo.mod`)
+- [x] Verificar se determinado usuário possui determinado livro (`temLivro?` em `emprestimo.mod`)
 - [x] Consultar a quantidade de livros do acervo (`qtdAcervo` em `acervo.mod`)
-- [ ] Consultar a quantidade de livros emprestados (`qtdEmprestados` em `emprestimo.mod`)
+- [x] Consultar a quantidade de livros emprestados (`qtdEmprestimos` em `emprestimo.mod`)
 
 ### 2.2. Regras Mínimas do Sistema
 - [ ] **Regra 1**: Um livro não pode ser emprestado se não pertencer ao acervo
