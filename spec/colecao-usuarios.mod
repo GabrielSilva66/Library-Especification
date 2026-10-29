@@ -1,27 +1,24 @@
-in usuario.mod
-in identificadores.mod
+require usuario usuario.mod
 
 mod! COLECAO-USUARIOS {
     protecting(USUARIO)
     protecting(STRING)
     protecting(IDENTIFICADORES)
 
-    -- Relação de subsort: todo usuário é um conjunto unitário de usuários
+    -- Multiconjunto: todo usuário é uma coleção unitária de usuários.
     [ Usuario < ConjuntoUsuarios ]
 
     -- Elemento neutro (conjunto vazio)
     op vazioUsuarios : -> ConjuntoUsuarios { constr }
 
-    -- Operador construtor de união de conjuntos
+    -- União de multiconjuntos: repetições são preservadas pela contagem.
     op __ : ConjuntoUsuarios ConjuntoUsuarios -> ConjuntoUsuarios { constr assoc comm id: vazioUsuarios }
 
-    vars U U2 : Usuario
     var  US   : ConjuntoUsuarios
-    vars ID, ID2 : UsuarioId
+    vars ID ID2 : UsuarioId
     vars N N2 E E2 : String
 
-    -- Axioma de idempotência
-    eq U U = U .
+    -- Sem idempotência: U U tem duas ocorrências, coerentemente com qtdUsuarios.
 
     -- Predicado de pertinência
     pred pertence? : UsuarioId ConjuntoUsuarios
@@ -29,10 +26,10 @@ mod! COLECAO-USUARIOS {
     eq pertence?(ID, usuario(ID, N, E) US) = true .
     ceq pertence?(ID, usuario(ID2, N2, E2) US) = pertence?(ID, US) if ID =/= ID2 .
 
-    -- Operador de remoção de um usuário do conjunto
+    -- Remove todas as ocorrências do ID, inclusive com atributos diferentes.
     op removerUsuario : UsuarioId ConjuntoUsuarios -> ConjuntoUsuarios
     eq removerUsuario(ID, vazioUsuarios) = vazioUsuarios .
-    eq removerUsuario(ID, usuario(ID, N, E) US) = US .
+    eq removerUsuario(ID, usuario(ID, N, E) US) = removerUsuario(ID, US) .
     ceq removerUsuario(ID, usuario(ID2, N2, E2) US) = usuario(ID2, N2, E2) removerUsuario(ID, US) if ID =/= ID2 .  
 
     -- Consulta: Quantidade de usuários cadastrados
@@ -40,3 +37,5 @@ mod! COLECAO-USUARIOS {
     eq qtdUsuarios(vazioUsuarios) = 0 .
     eq qtdUsuarios(usuario(ID, N, E) US) = 1 + qtdUsuarios(US) .
 }
+
+provide colecao-usuarios

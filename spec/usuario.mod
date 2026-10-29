@@ -1,7 +1,7 @@
 -- ============================================================
 -- usuario.mod: Especificação da entidade Usuario
 -- ============================================================
-in identificadores.mod
+require identificadores identificadores.mod
 
 mod! USUARIO {
   protecting(BOOL)
@@ -34,3 +34,5 @@ mod! USUARIO {
   -- Um usuário é válido se nome e email não forem strings vazias
   eq valido?(usuario(ID, N, E)) = (N =/= "") and (E =/= "") .
 }
+
+provide usuario

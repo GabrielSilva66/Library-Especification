@@ -1,13 +1,15 @@
-in acervo.mod
-in usuarios.mod
-in emprestimos.mod
+require acervo acervo.mod
+require colecao-usuarios colecao-usuarios.mod
+require emprestimo emprestimo.mod
 
 
 mod! BIBLIOTECA {
   protecting(ACERVO)
-  protecting(USUARIO)
-  protecting(EMPRESTIMOS)
+  protecting(COLECAO-USUARIOS)
+  protecting(EMPRESTIMO)
 
   [ Biblioteca ]
 
 }
+
+provide biblioteca

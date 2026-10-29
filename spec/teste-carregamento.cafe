@@ -1,0 +1,13 @@
+-- Carregamento independente, repetido e acesso aos tres dominios.
+-- Todos os resultados devem ser (true):Bool, sem avisos de redefinicao.
+require biblioteca biblioteca.mod
+require biblioteca biblioteca.mod
+require acervo acervo.mod
+require colecao-usuarios colecao-usuarios.mod
+require emprestimo emprestimo.mod
+
+open BIBLIOTECA .
+red qtdAcervo(vazioAcervo) == 0 .
+red qtdUsuarios(vazioUsuarios) == 0 .
+red qtdEmprestimos(semEmprestimo) == 0 .
+close

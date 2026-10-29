@@ -42,7 +42,7 @@ The system manages a library collection and book loans made by registered users:
 ## 3. Tooling
 
 - **Language / System**: [CafeOBJ](https://cafeobj.org/) (version 1.6.2).
-- **Paradigm**: Algebraic specification based on Equational Logic and Hidden Algebra / Rewriting Logic.
+- **Paradigm**: Algebraic specification with visible sorts and equational term rewriting.
 
 ---
 
@@ -52,16 +52,25 @@ The system manages a library collection and book loans made by registered users:
 .
 ├── README.md               # Project presentation and documentation
 ├── spec.md                 # Formal planning, architecture, and task checklist
-├── Trabalho-Pratico.pdf    # Practical assignment specification (DIM0167)
+├── doc/testes-prioridade-1.md # Regression guide and rationale for collection fixes
+├── scripts/testar.py       # Test runner with assertion/error checking
 ├── spec/                   # Formal specifications in CafeOBJ (.mod / .cafe)
-│   ├── identificadores.mod # Core sorts (LivroId, UsuarioId)
+│   ├── identificadores.mod # Core sorts (LivroId, UsuarioId, ObraId)
+│   ├── livro.mod           # Book entity
+│   ├── usuario.mod         # User entity
 │   ├── acervo.mod          # Collection monoid and book operations
-│   ├── usuarios.mod        # User management and registration checks
+│   ├── colecao-usuarios.mod # User collection and queries
 │   ├── emprestimo.mod      # Loan relationships and pending items
-│   ├── biblioteca.mod      # Global library state and transitions
-│   └── demo.cafe           # Experimental tests and term rewriting
+│   ├── biblioteca.mod      # Imports and sort; global state still pending
+│   ├── demo.cafe           # 19 illustrative reductions
+│   ├── teste-carregamento.cafe # Module loading checks
+│   ├── teste-colecao-usuarios.cafe # User collection assertions
+│   ├── teste-emprestimo.cafe # Loan collection assertions
+│   ├── teste-regressoes.cafe # Duplicate IDs, searches, removals and algebraic laws
+│   └── testes.cafe         # Boolean suite: 55 assertions
 └── ref/                    # Reference materials and course examples
     ├── Banco/              # Banking specification example in CafeOBJ
+    ├── Trabalho-Pratico.pdf # Practical assignment specification (DIM0167)
     └── cafeobj_apresentacao.pdf
 ```
 
@@ -70,28 +79,100 @@ The system manages a library collection and book loans made by registered users:
 ## 5. How to Run the Specification
 
 ### Prerequisites
-CafeOBJ installed and accessible in your shell environment (verify with `cafeobj --version` or `which cafeobj`).
+CafeOBJ installed and accessible in your shell environment (`command -v cafeobj`).
+The optional test runner requires Python 3 and uses only the standard library.
 
-### Interactive Execution
-Launch CafeOBJ in the project directory and load the desired modules:
+### Automated verification
+
+From the repository root:
 
 ```bash
+python3 scripts/testar.py
+```
+
+For the Homebrew/CLISP installation where `-batch` only prints the CLISP directory
+or startup reports `No such file: std`, use:
+
+```bash
+python3 scripts/testar.py --homebrew
+python3 scripts/testar.py --homebrew --verbose
+```
+
+The Homebrew option locates the installed prelude and loads the standard modules
+before running the suite. It does not change the installation. Successful output:
+
+```text
+OK: 55/55 assercoes verdadeiras; 55 reducoes executadas.
+```
+
+The runner fails on false/unresolved assertions, missing reductions, warnings,
+errors, nonzero process status or a 60-second timeout. A CafeOBJ exit status of
+zero alone is not sufficient evidence of success.
+
+### Linux: instruções para os integrantes do grupo
+
+Com Python 3 e CafeOBJ instalados, execute na raiz do clone:
+
+```bash
+python3 --version
+command -v cafeobj || command -v CafeOBJ
+python3 scripts/testar.py
+python3 scripts/testar.py --verbose
+```
+
+Não é necessário editar caminhos, instalar pacotes com `pip` ou usar Homebrew.
+O script encontra `cafeobj` ou `CafeOBJ` no `PATH`, localiza `spec/` a partir do
+próprio arquivo e executa os mesmos testes `.cafe` em qualquer clone. Python apenas
+inicia CafeOBJ e verifica sua saída; as equações e os testes são executados em CafeOBJ.
+
+Se o executável não for encontrado, configure o `PATH` da instalação de CafeOBJ.
+Se `-batch` falhar, examine a saída de `--verbose`; a opção `--homebrew` só se aplica
+a uma instalação feita pelo Homebrew, não é uma opção genérica para Linux.
+
+A suíte foi executada em macOS com CafeOBJ 1.6.2. O modo padrão usa recursos
+portáveis, mas ainda não foi validado em uma máquina Linux. O resultado esperado
+também no Linux é `OK: 55/55 assercoes verdadeiras; 55 reducoes executadas.`
+
+### Interactive Execution
+With a normally configured CafeOBJ installation, launch it from `spec/` so that
+relative includes resolve:
+
+```bash
+cd spec
 cafeobj
 ```
 
 Inside the interactive shell:
 ```cafeobj
-CafeOBJ> in spec/identificadores.mod .
-CafeOBJ> in spec/acervo.mod .
-CafeOBJ> in spec/usuarios.mod .
-CafeOBJ> in spec/emprestimo.mod .
-CafeOBJ> in spec/biblioteca.mod .
-CafeOBJ> in spec/demo.cafe .
+in testes.cafe
+in demo.cafe
+quit
 ```
 
 ### Batch Execution
 To run tests and reductions directly from the terminal:
 
 ```bash
-cafeobj -batch spec/demo.cafe
+cd spec
+cafeobj -batch testes.cafe
+cafeobj -batch demo.cafe
 ```
+
+The suite expects `(true):Bool` for every assertion. The separate `demo.cafe`
+prints books, numbers and booleans for inspection; it is not part of the 55 assertions.
+
+Dependencies use `require`/`provide` to avoid repeated definitions. Restart CafeOBJ
+after editing modules, since `require` caches loaded features within a session.
+
+### Current collection semantics
+
+All three collections are commutative monoids representing multisets: repeated
+records are retained and counted. Searches by book ID return `livroInexistente`,
+the unique book, or `livroDuplicado`. Collection-level removals remove every
+occurrence of the requested ID, independently of term order.
+
+For example, a multiset containing `a a b` has three occurrences; a set would
+collapse it to `a b`. Two distinct copies of the same work remain distinct books
+because their `LivroId` values differ. Repeating the same `LivroId` can represent
+invalid input, which the low-level collections must handle deterministically;
+the future library operations will enforce uniqueness and loan authorization.

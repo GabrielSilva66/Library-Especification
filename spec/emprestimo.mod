@@ -1,4 +1,4 @@
-in identificadores.mod
+require identificadores identificadores.mod
 
 mod! EMPRESTIMO {
   protecting(NAT)
@@ -13,16 +13,14 @@ mod! EMPRESTIMO {
   -- Elemento neutro (nenhum empréstimo realizado)
   op semEmprestimo : -> ConjuntoEmprestimos { constr }
 
-  -- Operador construtor da união de empréstimos
+  -- União de multiconjuntos: cada ocorrência de empréstimo é contada.
   op __ : ConjuntoEmprestimos ConjuntoEmprestimos -> ConjuntoEmprestimos { constr assoc comm id: semEmprestimo }
 
   vars L L2 : LivroId
   vars U U2 : UsuarioId
   var  ES   : ConjuntoEmprestimos
-  var  E    : Emprestimo
 
-  -- Axioma de Idempotência
-  eq E E = E .
+  -- Sem idempotência: E E tem duas ocorrências, coerentemente com qtdEmprestimos.
   
   -- Consulta: Verifica se um determinado livro está emprestado
   pred emprestado? : LivroId ConjuntoEmprestimos
@@ -36,10 +34,11 @@ mod! EMPRESTIMO {
   eq temLivro?(U, L, emprestar(L, U) ES) = true .
   ceq temLivro?(U, L, emprestar(L2, U2) ES) = temLivro?(U, L, ES) if (L =/= L2) or (U =/= U2) .
   
-  -- Operador de devolução de um livro (remove empréstimo)
+  -- Operação da coleção: remove todos os registros do livro, mesmo em
+  -- coleções inconsistentes. A autorização do usuário caberá a BIBLIOTECA.
   op devolver : LivroId ConjuntoEmprestimos -> ConjuntoEmprestimos
   eq devolver(L, semEmprestimo) = semEmprestimo .
-  eq devolver(L, emprestar(L, U) ES) = ES .
+  eq devolver(L, emprestar(L, U) ES) = devolver(L, ES) .
   ceq devolver(L, emprestar(L2, U) ES) = emprestar(L2, U) devolver(L, ES) if L =/= L2 .
 
   -- Consulta: Quantidade de empréstimos ativos
@@ -47,3 +46,5 @@ mod! EMPRESTIMO {
   eq qtdEmprestimos(semEmprestimo) = 0 .
   eq qtdEmprestimos(emprestar(L, U) ES) = 1 + qtdEmprestimos(ES) .
 }
+
+provide emprestimo

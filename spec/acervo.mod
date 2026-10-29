@@ -1,7 +1,7 @@
 -- ============================================================
 -- acervo.mod: Coleção de livros (Acervo) modelada como Monóide
 -- ============================================================
-in livro.mod
+require livro livro.mod
 
 mod! ACERVO {
   protecting(NAT)
@@ -16,6 +16,7 @@ mod! ACERVO {
 
   -- Construtor de erro: retornado quando o livro não é encontrado
   op livroInexistente : -> LivroOuErro { constr }
+  op livroDuplicado : -> LivroOuErro { constr }
 
   -- Construtores do Monóide (coleção comutativa com elemento neutro)
   op vazioAcervo : -> Acervo { constr }
@@ -24,6 +25,9 @@ mod! ACERVO {
   -- Operadores Observadores e Consultas
   op pertenceAcervo?   : LivroId Acervo -> Bool
   op buscarLivro       : LivroId Acervo -> LivroOuErro
+  -- Busca em duas etapas: filtra pelo ID e distingue zero, um ou varios resultados.
+  op filtrarId         : LivroId Acervo -> Acervo
+  op resultadoBusca    : Acervo -> LivroOuErro
   op buscarTitulo      : String Acervo -> Acervo 
   op qtdAcervo         : Acervo -> Nat
   op qtdExemplaresObra : ObraId Acervo -> Nat
@@ -47,9 +51,15 @@ mod! ACERVO {
   eq pertenceAcervo?(ID, vazioAcervo) = false .
   eq pertenceAcervo?(ID, L A)         = (ID == id(L)) or pertenceAcervo?(ID, A) .
 
-  -- Busca por ID: retorna o Livro se encontrado, ou livroInexistente se vazio/não achado
-  eq buscarLivro(ID, vazioAcervo) = livroInexistente .
-  eq buscarLivro(ID, L A)         = if ID == id(L) then L else buscarLivro(ID, A) fi .
+  -- Numa coleção comutativa não existe um "primeiro" livro com o ID.
+  -- Duplicidades, inclusive de exemplares identicos, retornam erro explicito.
+  eq buscarLivro(ID, A) = resultadoBusca(filtrarId(ID, A)) .
+  eq filtrarId(ID, vazioAcervo) = vazioAcervo .
+  eq filtrarId(ID, L A) =
+    if ID == id(L) then L filtrarId(ID, A) else filtrarId(ID, A) fi .
+  eq resultadoBusca(vazioAcervo) = livroInexistente .
+  eq resultadoBusca(L) = L .
+  eq resultadoBusca(L L' A) = livroDuplicado .
 
   -- Quantidade total de livros no acervo (cardinalidade da coleção)
   eq qtdAcervo(vazioAcervo) = 0 .
@@ -79,11 +89,12 @@ mod! ACERVO {
     else tituloDeAutor(T, A)
     fi .
 
-  -- Remoção de exemplar por ID: se não encontrado, mantém o acervo inalterado
+  -- Remove todas as ocorrencias do ID, sem depender da ordem de casamento.
+  -- Se o ID nao existe, mantem o acervo inalterado.
   eq removerDoAcervo(ID, vazioAcervo) = vazioAcervo .
   eq removerDoAcervo(ID, L A) =
     if ID == id(L)
-    then A
+    then removerDoAcervo(ID, A)
     else L removerDoAcervo(ID, A)
     fi .
 
@@ -95,3 +106,5 @@ mod! ACERVO {
   eq todosValidos?(vazioAcervo) = true .
   eq todosValidos?(L A)         = valido?(L) and todosValidos?(A) .
 }
+
+provide acervo

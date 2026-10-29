@@ -5,7 +5,7 @@
 --  cafeobj -batch teste-emprestimo.cafe
 -- ============================================================
 
-in emprestimo.mod
+require emprestimo emprestimo.mod
 
 open EMPRESTIMO .
 
@@ -14,7 +14,7 @@ open EMPRESTIMO .
     ops u1 u2    : -> UsuarioId .
 
     -- ----------------------------------------------------------
-    -- TESTE 1: Propriedade de idempotência
+    -- TESTE 1: Propriedade de identidade (elemento neutro)
     -- ----------------------------------------------------------
 
     -- Elemento neutro (semEmprestimo) não altera a coleção

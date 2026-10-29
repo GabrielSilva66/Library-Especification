@@ -1,0 +1,72 @@
+-- leis das colecoes e tratamento deterministico de duplicidade
+-- Estes testes constroem duplicidades deliberadamente. Nao representam
+-- cadastros/emprestimos autorizados pela biblioteca (integracao ainda pendente).
+-- Todas as reducoes devem resultar em (true):Bool.
+require biblioteca biblioteca.mod
+
+open BIBLIOTECA .
+ops l1 l2 lx : -> LivroId .
+ops u1 u2 ux : -> UsuarioId .
+op ob1 : -> ObraId .
+ops a b c : -> Livro .
+ops ana outra bia : -> Usuario .
+ops e1 e2 e3 : -> Emprestimo .
+eq a = livro(l1, ob1, "Algebra", "Autor", 2026) .
+eq b = livro(l1, ob1, "Outro titulo", "Outro autor", 2025) .
+eq c = livro(l2, ob1, "Algebra", "Autor", 2026) .
+eq ana = usuario(u1, "Ana", "ana@exemplo.com") .
+eq outra = usuario(u1, "Outra", "outra@exemplo.com") .
+eq bia = usuario(u2, "Bia", "bia@exemplo.com") .
+eq e1 = emprestar(l1, u1) .
+eq e2 = emprestar(l1, u2) .
+eq e3 = emprestar(l2, u1) .
+
+-- A01-A06: busca vazia, unica, ausente e com ID repetido.
+red buscarLivro(l1, vazioAcervo) == livroInexistente .
+red buscarLivro(l1, a c) == a .
+red buscarLivro(lx, a c) == livroInexistente .
+red buscarLivro(l1, a b c) == livroDuplicado .
+red buscarLivro(l1, a a c) == livroDuplicado .
+red buscarLivro(l1, c b a) == livroDuplicado .
+-- A07-A11: remover todas as ocorrencias e preservar os demais livros.
+red removerDoAcervo(l1, vazioAcervo) == vazioAcervo .
+red removerDoAcervo(lx, a c) == (a c) .
+red removerDoAcervo(l1, a b c) == c .
+red removerDoAcervo(l1, c a a) == c .
+red removerDoAcervo(l1, removerDoAcervo(l1, a b c)) == c .
+-- A12-A19: contagem, integridade, filtros e leis do monoide.
+red qtdAcervo(a a) == 2 .
+red idsUnicos?(a c) == true .
+red idsUnicos?(a b c) == false .
+red qtdExemplaresObra(ob1, a c) == 2 .
+red buscarTitulo("Algebra", a b c) == (a c) .
+red tituloDeAutor("Autor", a b c) == (a c) .
+red (a vazioAcervo) == a .
+red ((a b) c) == (c (b a)) .
+
+-- U01-U04: multiconjunto, identidade e associatividade/comutatividade.
+red qtdUsuarios(ana ana) == 2 .
+red qtdUsuarios(ana outra bia) == 3 .
+red (ana vazioUsuarios) == ana .
+red ((ana outra) bia) == (bia (outra ana)) .
+-- U05-U10: pertinencia e remocao total por ID.
+red pertence?(u1, ana outra bia) == true .
+red pertence?(ux, ana outra bia) == false .
+red removerUsuario(u1, ana outra bia) == bia .
+red removerUsuario(u1, bia ana ana) == bia .
+red removerUsuario(ux, ana bia) == (ana bia) .
+red removerUsuario(u1, vazioUsuarios) == vazioUsuarios .
+
+-- E01-E04: multiconjunto, identidade e associatividade/comutatividade.
+red qtdEmprestimos(e1 e1) == 2 .
+red qtdEmprestimos(e1 e2 e3) == 3 .
+red (e1 semEmprestimo) == e1 .
+red ((e1 e2) e3) == (e3 (e2 e1)) .
+-- E05-E10: remocao total, ausencia e preservacao de outros livros.
+red devolver(l1, e1 e2 e3) == e3 .
+red devolver(l1, e3 e1 e1) == e3 .
+red devolver(lx, e1 e3) == (e1 e3) .
+red devolver(l1, semEmprestimo) == semEmprestimo .
+red emprestado?(l1, devolver(l1, e1 e2 e3)) == false .
+red temLivro?(u1, l2, devolver(l1, e1 e2 e3)) == true .
+close

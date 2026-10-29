@@ -4,7 +4,7 @@
 -- Para executar:
 --  cafeobj -batch demo.cafe
 -- ============================================================
-in acervo.mod
+require acervo acervo.mod
 
 open ACERVO .
 

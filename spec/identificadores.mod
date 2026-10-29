@@ -3,3 +3,5 @@
 mod! IDENTIFICADORES {
   [ LivroId UsuarioId ObraId ]
 }
+
+provide identificadores

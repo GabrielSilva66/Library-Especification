@@ -1,0 +1,5 @@
+-- Execute a partir de spec/: cafeobj -batch testes.cafe
+in teste-carregamento.cafe
+in teste-colecao-usuarios.cafe
+in teste-emprestimo.cafe
+in teste-regressoes.cafe

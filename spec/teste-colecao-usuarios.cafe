@@ -5,14 +5,14 @@
 --  cafeobj -batch teste-colecao-usuarios.cafe
 -- ============================================================
 
-in colecao-usuarios.mod
+require colecao-usuarios colecao-usuarios.mod
 
 open COLECAO-USUARIOS .
 
   ops u1 u2 : -> UsuarioId .
 
   -- Teste 1: Adição de usuários
-  red usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com") .
+  red qtdUsuarios(usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == 2 .
   
   -- Teste 2: Pertinência
   red pertence?(u1, usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == true .
@@ -21,6 +21,6 @@ open COLECAO-USUARIOS .
   red removerUsuario(u1, usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == usuario(u2, "Bia", "b@b.com") .
 
   -- Teste 4: Contagem de usuários
-  red qtdUsuarios(usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == 2.
+  red qtdUsuarios(usuario(u1, "Ana", "a@a.com") usuario(u2, "Bia", "b@b.com")) == 2 .
 
 close

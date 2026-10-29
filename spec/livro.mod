@@ -1,7 +1,7 @@
 -- ============================================================
 -- livro.mod: Especificação da entidade Livro
 -- ============================================================
-in identificadores.mod
+require identificadores identificadores.mod
 
 mod! LIVRO {
   protecting(IDENTIFICADORES)
@@ -41,3 +41,5 @@ mod! LIVRO {
   -- Um livro é válido se título e autor não forem vazios e o ano for positivo
   eq valido?(livro(ID, Obra, T, A, Ano)) = (T =/= "") and (A =/= "") and (Ano > 0) .
 }
+
+provide livro
