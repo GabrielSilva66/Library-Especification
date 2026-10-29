@@ -1,0 +1,81 @@
+-- Prioridade 2: construcao de estados e consultas, sem operacoes de transicao.
+-- Execute dentro de spec/: cafeobj -batch teste-estado-biblioteca.cafe
+-- Todas as comparacoes devem resultar em (true):Bool.
+require biblioteca biblioteca.mod
+
+open BIBLIOTECA .
+ops l1 l2 lx : -> LivroId .
+ops u1 u2 ux : -> UsuarioId .
+op ob1 : -> ObraId .
+ops livro1 livro2 : -> Livro .
+ops ana bia : -> Usuario .
+ops bLivre bEmprestada bTodosEmprestados bSemAcervo bSemUsuario : -> Biblioteca .
+eq livro1 = livro(l1, ob1, "Algebra", "Autor", 2026) .
+eq livro2 = livro(l2, ob1, "Algebra", "Autor", 2026) .
+eq ana = usuario(u1, "Ana", "ana@exemplo.com") .
+eq bia = usuario(u2, "Bia", "bia@exemplo.com") .
+eq bLivre = biblioteca(livro1 livro2, ana bia, semEmprestimo) .
+eq bEmprestada = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1)) .
+eq bTodosEmprestados = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1) emprestar(l2, u1)) .
+-- Estados inconsistentes construidos deliberadamente: observadores nao os corrigem.
+eq bSemAcervo = biblioteca(vazioAcervo, ana, emprestar(lx, u1)) .
+eq bSemUsuario = biblioteca(livro1, vazioUsuarios, emprestar(l1, ux)) .
+
+-- V01-V12: estado inicial, projecoes, contagens e consultas negativas.
+red bibliotecaVazia == biblioteca(vazioAcervo, vazioUsuarios, semEmprestimo) .
+red acervo(bibliotecaVazia) == vazioAcervo .
+red usuarios(bibliotecaVazia) == vazioUsuarios .
+red emprestimos(bibliotecaVazia) == semEmprestimo .
+red qtdAcervo(bibliotecaVazia) == 0 .
+red qtdUsuarios(bibliotecaVazia) == 0 .
+red qtdEmprestimos(bibliotecaVazia) == 0 .
+red qtdDisponiveis(bibliotecaVazia) == 0 .
+red pertenceAcervo?(bibliotecaVazia, l1) == false .
+red usuarioRegistrado?(bibliotecaVazia, u1) == false .
+red emprestado?(bibliotecaVazia, l1) == false .
+red disponivel?(bibliotecaVazia, l1) == false .
+
+-- P01-P08: preservacao dos componentes, composicao e sobrecargas.
+red acervo(bEmprestada) == (livro1 livro2) .
+red usuarios(bEmprestada) == (ana bia) .
+red emprestimos(bEmprestada) == emprestar(l1, u1) .
+red biblioteca(acervo(bEmprestada), usuarios(bEmprestada), emprestimos(bEmprestada)) == bEmprestada .
+red qtdAcervo(bEmprestada) == 2 .
+red qtdUsuarios(bEmprestada) == 2 .
+red qtdEmprestimos(bEmprestada) == 1 .
+red qtdExemplaresObra(ob1, acervo(bEmprestada)) == 2 .
+
+-- C01-C10: existencia, posse e disponibilidade por exemplar.
+red pertenceAcervo?(bEmprestada, l1) == true .
+red pertenceAcervo?(bEmprestada, lx) == false .
+red usuarioRegistrado?(bEmprestada, u1) == true .
+red usuarioRegistrado?(bEmprestada, ux) == false .
+red emprestado?(bEmprestada, l1) == true .
+red temLivro?(bEmprestada, u1, l1) == true .
+red temLivro?(bEmprestada, u2, l1) == false .
+red disponivel?(bEmprestada, l1) == false .
+red disponivel?(bEmprestada, l2) == true .
+red disponivel?(bEmprestada, lx) == false .
+
+-- D01-D06: contagem independente e estados com zero/um/todos emprestados.
+red qtdDisponiveis(bLivre) == 2 .
+red qtdDisponiveis(bEmprestada) == 1 .
+red qtdDisponiveis(bTodosEmprestados) == 0 .
+red qtdEmprestimos(bTodosEmprestados) == 2 .
+red qtdAcervo(bTodosEmprestados) == 2 .
+red temLivro?(bTodosEmprestados, u1, l1) and temLivro?(bTodosEmprestados, u1, l2) .
+
+-- O01-O02: ordem das colecoes nao altera o estado nem as contagens.
+red biblioteca(livro2 livro1, bia ana, emprestar(l1, u1)) == bEmprestada .
+red qtdDisponiveis(biblioteca(livro2 livro1, bia ana, emprestar(l1, u1))) == 1 .
+
+-- I01-I08: observar nao equivale a validar ou modificar um estado.
+red emprestimos(bSemAcervo) == emprestar(lx, u1) .
+red qtdEmprestimos(bSemAcervo) == 1 .
+red qtdAcervo(bSemAcervo) == 0 .
+red qtdDisponiveis(bSemAcervo) == 0 .
+red disponivel?(bSemAcervo, lx) == false .
+red usuarioRegistrado?(bSemUsuario, ux) == false .
+red temLivro?(bSemUsuario, ux, l1) == true .
+red disponivel?(bSemUsuario, l1) == false .
+close

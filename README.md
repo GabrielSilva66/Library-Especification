@@ -52,7 +52,7 @@ The system manages a library collection and book loans made by registered users:
 .
 ├── README.md               # Project presentation and documentation
 ├── spec.md                 # Formal planning, architecture, and task checklist
-├── doc/testes-prioridade-1.md # Regression guide and rationale for collection fixes
+├── doc/estado-biblioteca.md # Global state, observer decisions and test guide
 ├── scripts/testar.py       # Test runner with assertion/error checking
 ├── spec/                   # Formal specifications in CafeOBJ (.mod / .cafe)
 │   ├── identificadores.mod # Core sorts (LivroId, UsuarioId, ObraId)
@@ -61,13 +61,14 @@ The system manages a library collection and book loans made by registered users:
 │   ├── acervo.mod          # Collection monoid and book operations
 │   ├── colecao-usuarios.mod # User collection and queries
 │   ├── emprestimo.mod      # Loan relationships and pending items
-│   ├── biblioteca.mod      # Imports and sort; global state still pending
+│   ├── biblioteca.mod      # Global state, projections and queries
 │   ├── demo.cafe           # 19 illustrative reductions
 │   ├── teste-carregamento.cafe # Module loading checks
 │   ├── teste-colecao-usuarios.cafe # User collection assertions
 │   ├── teste-emprestimo.cafe # Loan collection assertions
 │   ├── teste-regressoes.cafe # Duplicate IDs, searches, removals and algebraic laws
-│   └── testes.cafe         # Boolean suite: 55 assertions
+│   ├── teste-estado-biblioteca.cafe # 46 assertions about states and observers
+│   └── testes.cafe         # Boolean suite: 101 assertions
 └── ref/                    # Reference materials and course examples
     ├── Banco/              # Banking specification example in CafeOBJ
     ├── Trabalho-Pratico.pdf # Practical assignment specification (DIM0167)
@@ -102,7 +103,7 @@ The Homebrew option locates the installed prelude and loads the standard modules
 before running the suite. It does not change the installation. Successful output:
 
 ```text
-OK: 55/55 assercoes verdadeiras; 55 reducoes executadas.
+OK: 101/101 assercoes verdadeiras; 101 reducoes executadas.
 ```
 
 The runner fails on false/unresolved assertions, missing reductions, warnings,
@@ -131,7 +132,7 @@ a uma instalação feita pelo Homebrew, não é uma opção genérica para Linux
 
 A suíte foi executada em macOS com CafeOBJ 1.6.2. O modo padrão usa recursos
 portáveis, mas ainda não foi validado em uma máquina Linux. O resultado esperado
-também no Linux é `OK: 55/55 assercoes verdadeiras; 55 reducoes executadas.`
+também no Linux é `OK: 101/101 assercoes verdadeiras; 101 reducoes executadas.`
 
 ### Interactive Execution
 With a normally configured CafeOBJ installation, launch it from `spec/` so that
@@ -159,10 +160,12 @@ cafeobj -batch demo.cafe
 ```
 
 The suite expects `(true):Bool` for every assertion. The separate `demo.cafe`
-prints books, numbers and booleans for inspection; it is not part of the 55 assertions.
+prints books, numbers and booleans for inspection; it is not part of the 101 assertions.
 
 Dependencies use `require`/`provide` to avoid repeated definitions. Restart CafeOBJ
 after editing modules, since `require` caches loaded features within a session.
+
+## Changes
 
 ### Current collection semantics
 
@@ -176,3 +179,21 @@ collapse it to `a b`. Two distinct copies of the same work remain distinct books
 because their `LivroId` values differ. Repeating the same `LivroId` can represent
 invalid input, which the low-level collections must handle deterministically;
 the future library operations will enforce uniqueness and loan authorization.
+
+### Global state and observers (last change)
+
+`biblioteca(A, US, ES)` combines the book collection, registered users and loan
+records into one visible state. `bibliotecaVazia` denotes the state with all three
+collections empty. The projections `acervo`, `usuarios` and `emprestimos` retrieve
+the original components without changing them.
+
+State queries use the library as the first argument: `pertenceAcervo?(B, ID)`,
+`usuarioRegistrado?(B, UID)`, `emprestado?(B, ID)`, `temLivro?(B, UID, ID)` and
+`disponivel?(B, ID)`. The existing counters also accept `Biblioteca`:
+`qtdAcervo(B)`, `qtdUsuarios(B)` and `qtdEmprestimos(B)`.
+`qtdDisponiveis(B)` independently counts collection entries without a loan record.
+
+Borrowed books remain in the collection. Availability requires both collection
+membership and absence of a loan. The constructor represents data, including
+inconsistent states; guarded updates and global validity predicates are still
+pending. Loan queries report the stored relation, not an authorization decision.

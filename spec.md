@@ -41,10 +41,16 @@ graph TD
   - Operadores definidos:
 
 - **`biblioteca.mod`**:
-  - Sort: 
-  - Construtor do estado global: 
-  - Operadores observadores:
-  - Operadores mutadores (transição de estado): 
+  - Sort: `Biblioteca` (visível).
+  - Construtor: `biblioteca : Acervo ConjuntoUsuarios ConjuntoEmprestimos -> Biblioteca`.
+  - Estado inicial definido: `bibliotecaVazia`.
+  - Projeções: `acervo`, `usuarios`, `emprestimos`.
+  - Consultas: `pertenceAcervo?`, `usuarioRegistrado?`, `emprestado?`, `temLivro?`,
+    `disponivel?` (estado como primeiro argumento).
+  - Contagens: `qtdAcervo`, `qtdUsuarios`, `qtdEmprestimos`, `qtdDisponiveis`.
+  - Auxiliar: `contarDisponiveis` percorre o acervo e consulta a relação de empréstimos.
+  - Operadores de transição e invariantes globais: pendentes, prioridades 3 e 4.
+  - Decisões e roteiro executável: [estado-biblioteca.md](doc/estado-biblioteca.md).
 
 ---
 
@@ -55,16 +61,19 @@ Lista estruturada diretamente a partir dos requisitos exigidos no documento ofic
 ### 2.1. Funcionalidades do Sistema
 - [ ] Adicionar um livro ao acervo (`adicionarLivro`)
 - [ ] Remover um livro do acervo (`removerLivro`)
-- [x] Registrar um usuário (operação de união em `colecao-usuarios.mod`)
-- [x] Remover um usuário (`removerUsuario` em `colecao-usuarios.mod`)
-- [x] Realizar o empréstimo de um livro (operação de união em `emprestimo.mod`)
-- [x] Realizar a devolução de um livro (`devolver` em `emprestimo.mod`)
+- [x] Representar o estado global, o estado vazio e as projeções em `biblioteca.mod`
+- [ ] Registrar um usuário no estado global (construção da coleção já implementada)
+- [ ] Remover um usuário no estado global (remoção da coleção já implementada)
+- [ ] Realizar empréstimo com condições (construtor do registro já implementado)
+- [ ] Realizar devolução com condições (remoção do registro já implementada)
 - [x] Verificar se determinado livro pertence ao acervo (`pertenceAcervo?` em `acervo.mod`)
-- [ ] Verificar se determinado livro está disponível (`disponivel?` em `biblioteca.mod`)
+- [x] Verificar se determinado livro está disponível (`disponivel?` em `biblioteca.mod`)
 - [x] Verificar se determinado usuário possui determinado livro (`temLivro?` em `emprestimo.mod`)
 - [x] Consultar a quantidade de livros do acervo (`qtdAcervo` em `acervo.mod`)
 - [x] Consultar a quantidade de livros emprestados (`qtdEmprestimos` em `emprestimo.mod`)
 - [x] Consultar a quantidade de usuários registrados (`qtdUsuarios` em `colecao-usuarios.mod`)
+- [x] Consultar contagens diretamente no estado global, incluindo `qtdDisponiveis`
+- [x] Validar construção e observadores com 46 novos testes (101 asserções na suíte completa)
 
 ### 2.2. Regras Mínimas do Sistema
 - [ ] **Regra 1**: Um livro não pode ser emprestado se não pertencer ao acervo
