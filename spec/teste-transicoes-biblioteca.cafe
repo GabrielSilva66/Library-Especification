@@ -1,0 +1,23 @@
+require biblioteca biblioteca.mod
+
+open BIBLIOTECA .
+
+ops l1 l2 lx : -> LivroId .
+ops u1 u2 ux : -> UsuarioId .
+ops ob1 ob2 : -> ObraId .
+ops livro1 livro2 : -> Livro .
+ops ana bia : -> Usuario .
+ops bLivre bEmprestada bTodosEmprestados bSemAcervo bSemUsuario : -> Biblioteca .
+
+eq livro1 = livro(l1, ob1, "Algebra", "Autor", 2026) .
+eq livro2 = livro(l2, ob2, "Algebra", "Autor", 2026) .
+
+eq ana = usuario(u1, "Ana", "ana@exemplo.com") .
+eq bia = usuario(u2, "Bia", "bia@exemplo.com") .
+
+eq bLivre = biblioteca(livro1 livro2, ana bia, semEmprestimo) .
+eq bEmprestada = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1)) .
+eq bTodosEmprestados = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1) emprestar(l2, u1)) .
+-- Estados inconsistentes construidos deliberadamente: observadores nao os corrigem.
+eq bSemAcervo = biblioteca(vazioAcervo, ana, emprestar(lx, u1)) .
+eq bSemUsuario = biblioteca(livro1, vazioUsuarios, emprestar(l1, ux)) .

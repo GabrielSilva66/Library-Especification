@@ -22,10 +22,13 @@ mod! ACERVO {
   op vazioAcervo : -> Acervo { constr }
   op __          : Acervo Acervo -> Acervo { constr assoc comm id: vazioAcervo }
 
-  -- Operadores Observadores e Consultas
-  op pertenceAcervo?   : LivroId Acervo -> Bool
+  -- Modificadores
+  op iniciarAcervo     : -> Acervo
+  op adicionarLivro : Livro Acervo -> Acervo
+  op removerDoAcervo   : LivroId Acervo -> Acervo
+
+  -- Consultas
   op buscarLivro       : LivroId Acervo -> LivroOuErro
-  -- Busca em duas etapas: filtra pelo ID e distingue zero, um ou varios resultados.
   op filtrarId         : LivroId Acervo -> Acervo
   op resultadoBusca    : Acervo -> LivroOuErro
   op buscarTitulo      : String Acervo -> Acervo 
@@ -33,12 +36,10 @@ mod! ACERVO {
   op qtdExemplaresObra : ObraId Acervo -> Nat
   op tituloDeAutor     : String Acervo -> Acervo
 
-  -- Operações sobre o Acervo
-  op removerDoAcervo   : LivroId Acervo -> Acervo
-
-  -- Predicados de Integridade e Validade
-  op idsUnicos?        : Acervo -> Bool
-  op todosValidos?     : Acervo -> Bool
+  -- Predicados
+  pred pertenceAcervo?   : LivroId Acervo
+  pred idsUnicos?        : Acervo
+  pred todosValidos?     : Acervo
 
   -- Variáveis usadas nas equações
   var ID : LivroId
@@ -47,16 +48,36 @@ mod! ACERVO {
   var A : Acervo
   var T : String
 
-  -- Verificação de pertinência: busca pelo ID do livro no acervo
-  eq pertenceAcervo?(ID, vazioAcervo) = false .
-  eq pertenceAcervo?(ID, L A)         = (ID == id(L)) or pertenceAcervo?(ID, A) .
+  -- Construtor de coleção vazia
+  eq iniciarAcervo = vazioAcervo .
 
-  -- Numa coleção comutativa não existe um "primeiro" livro com o ID.
-  -- Duplicidades, inclusive de exemplares identicos, retornam erro explicito.
+  -- Adiciona um livro ao acervo, sem duplicatas
+  eq adicionarLivro(L, A) = 
+    if pertenceAcervo?(id(L), A)
+    then A
+    else L A
+    fi .
+
+  -- Remove todas as ocorrências do ID, sem depender da ordem de casamento.
+  eq removerDoAcervo(ID, vazioAcervo) = vazioAcervo .
+  eq removerDoAcervo(ID, L A) =
+    if ID == id(L)
+    then removerDoAcervo(ID, A)
+    else L removerDoAcervo(ID, A)
+    fi .
+
+  -- Consulta um livro pelo seu ID, retornando um LivroOuErro
   eq buscarLivro(ID, A) = resultadoBusca(filtrarId(ID, A)) .
+
+  -- Filtro por ID: retorna um sub-acervo apenas com os livros do ID informado
   eq filtrarId(ID, vazioAcervo) = vazioAcervo .
   eq filtrarId(ID, L A) =
-    if ID == id(L) then L filtrarId(ID, A) else filtrarId(ID, A) fi .
+    if ID == id(L) 
+    then L filtrarId(ID, A) 
+    else filtrarId(ID, A) 
+    fi .
+  
+  -- Retorna erro se o acervo filtrado estiver vazio, ou erro de duplicidade se houver mais de um livro com o mesmo ID.
   eq resultadoBusca(vazioAcervo) = livroInexistente .
   eq resultadoBusca(L) = L .
   eq resultadoBusca(L L' A) = livroDuplicado .
@@ -89,22 +110,29 @@ mod! ACERVO {
     else tituloDeAutor(T, A)
     fi .
 
-  -- Remove todas as ocorrencias do ID, sem depender da ordem de casamento.
-  -- Se o ID nao existe, mantem o acervo inalterado.
-  eq removerDoAcervo(ID, vazioAcervo) = vazioAcervo .
-  eq removerDoAcervo(ID, L A) =
+  -- Predicado de pertinência: busca pelo ID do livro no acervo
+  eq pertenceAcervo?(ID, vazioAcervo) = false .
+  eq pertenceAcervo?(ID, L A) =
     if ID == id(L)
-    then removerDoAcervo(ID, A)
-    else L removerDoAcervo(ID, A)
+    then true
+    else pertenceAcervo?(ID, A) 
     fi .
 
-  -- Verificação de unicidade dos identificadores de livros
+  -- Predicado de unicidade dos identificadores de livros
   eq idsUnicos?(vazioAcervo) = true .
-  eq idsUnicos?(L A)         = not(pertenceAcervo?(id(L), A)) and idsUnicos?(A) .
+  eq idsUnicos?(L A) = 
+    if pertenceAcervo?(id(L), A)
+    then false
+    else idsUnicos?(A) 
+    fi .
 
-  -- Verificação de que todos os livros cadastrados atendem ao predicado valido?
+  -- Predicado de que todos os livros cadastrados são válidos
   eq todosValidos?(vazioAcervo) = true .
-  eq todosValidos?(L A)         = valido?(L) and todosValidos?(A) .
+  eq todosValidos?(L A) = 
+    if not(valido?(L)) 
+    then false
+    else todosValidos?(A) 
+    fi .
 }
 
 provide acervo

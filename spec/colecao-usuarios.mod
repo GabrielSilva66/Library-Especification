@@ -8,34 +8,74 @@ mod! COLECAO-USUARIOS {
     -- Multiconjunto: todo usuário é uma coleção unitária de usuários.
     [ Usuario < ConjuntoUsuarios ]
 
-    -- Elemento neutro (conjunto vazio)
+    -- Construtores do Monóide (coleção comutativa com elemento neutro)
     op vazioUsuarios : -> ConjuntoUsuarios { constr }
-
-    -- União de multiconjuntos: repetições são preservadas pela contagem.
     op __ : ConjuntoUsuarios ConjuntoUsuarios -> ConjuntoUsuarios { constr assoc comm id: vazioUsuarios }
 
+    -- Modificadores
+    op iniciarColecao : -> ConjuntoUsuarios
+    op adicionarUsuario : Usuario ConjuntoUsuarios -> ConjuntoUsuarios
+    op removerUsuario : UsuarioId ConjuntoUsuarios -> ConjuntoUsuarios
+
+    -- Consultas
+    op qtdUsuarios : ConjuntoUsuarios -> Nat
+
+    -- Predicados
+    pred pertence? : UsuarioId ConjuntoUsuarios
+    pred idsUnicos? : ConjuntoUsuarios
+    pred todosValidos? : ConjuntoUsuarios
+
+    -- Variáveis usadas nas equações
     var  US   : ConjuntoUsuarios
-    vars ID ID2 : UsuarioId
+    var U    : Usuario
+    var ID   : UsuarioId
     vars N N2 E E2 : String
 
-    -- Sem idempotência: U U tem duas ocorrências, coerentemente com qtdUsuarios.
+    -- Construtor de coleção vazia
+    eq iniciarColecao = vazioUsuarios .
 
-    -- Predicado de pertinência
-    pred pertence? : UsuarioId ConjuntoUsuarios
-    eq pertence?(ID, vazioUsuarios) = false .
-    eq pertence?(ID, usuario(ID, N, E) US) = true .
-    ceq pertence?(ID, usuario(ID2, N2, E2) US) = pertence?(ID, US) if ID =/= ID2 .
+    -- Adiciona um usuário à coleção, sem duplicatas
+    eq adicionarUsuario(U, US) = 
+        if pertence?(id(U), US) 
+        then US 
+        else U US 
+        fi .
 
     -- Remove todas as ocorrências do ID, inclusive com atributos diferentes.
-    op removerUsuario : UsuarioId ConjuntoUsuarios -> ConjuntoUsuarios
     eq removerUsuario(ID, vazioUsuarios) = vazioUsuarios .
-    eq removerUsuario(ID, usuario(ID, N, E) US) = removerUsuario(ID, US) .
-    ceq removerUsuario(ID, usuario(ID2, N2, E2) US) = usuario(ID2, N2, E2) removerUsuario(ID, US) if ID =/= ID2 .  
+    eq removerUsuario(ID, U US) = 
+        if ID == id(U) 
+        then removerUsuario(ID, US) 
+        else U removerUsuario(ID, US) 
+        fi .
 
-    -- Consulta: Quantidade de usuários cadastrados
-    op qtdUsuarios : ConjuntoUsuarios -> Nat
+    
+    -- Consulta a quantidade de usuários cadastrados
     eq qtdUsuarios(vazioUsuarios) = 0 .
-    eq qtdUsuarios(usuario(ID, N, E) US) = 1 + qtdUsuarios(US) .
+    eq qtdUsuarios(U US) = 1 + qtdUsuarios(US) .
+
+    -- Predicado de pertinência
+    eq pertence?(ID, vazioUsuarios) = false .
+    eq pertence?(ID, U US) = 
+        if ID == id(U) 
+        then true 
+        else pertence?(ID, US) 
+        fi .
+
+    -- Predicado que verifica se todos os IDs são únicos
+    eq idsUnicos?(vazioUsuarios) = true .
+    eq idsUnicos?(U US) = 
+        if pertence?(id(U), US)
+        then false
+        else idsUnicos?(US)
+        fi .
+
+    eq todosValidos?(vazioUsuarios) = true .
+    eq todosValidos?(U US) = 
+        if valido?(U)
+        then todosValidos?(US)
+        else false
+        fi .
 }
 
 provide colecao-usuarios

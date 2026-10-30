@@ -22,8 +22,8 @@ mod! LIVRO {
   op autor  : Livro -> String
   op ano    : Livro -> Nat
 
-  -- Predicado de validação: verifica se os dados do livro são válidos
-  op valido? : Livro -> Bool
+  -- Predicados
+  pred valido? : Livro
 
   -- Variáveis usadas nas equações
   var ID   : LivroId
@@ -38,7 +38,7 @@ mod! LIVRO {
   eq autor(livro(ID, Obra, T, A, Ano))  = A . 
   eq ano(livro(ID, Obra, T, A, Ano))    = Ano . 
 
-  -- Um livro é válido se título e autor não forem vazios e o ano for positivo
+  -- Predicado de validação: um livro é válido se título e autor não forem vazios e o ano for positivo
   eq valido?(livro(ID, Obra, T, A, Ano)) = (T =/= "") and (A =/= "") and (Ano > 0) .
 }
 

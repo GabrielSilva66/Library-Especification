@@ -19,8 +19,8 @@ mod! USUARIO {
   op nome  : Usuario -> String
   op email : Usuario -> String
 
-  -- Predicado de validação: verifica se o usuário possui dados válidos
-  op valido? : Usuario -> Bool
+  -- Predicado
+  pred valido? : Usuario
 
   -- Variáveis usadas nas equações
   vars ID : UsuarioId
@@ -31,7 +31,7 @@ mod! USUARIO {
   eq nome(usuario(ID, N, E))  = N .
   eq email(usuario(ID, N, E)) = E .
 
-  -- Um usuário é válido se nome e email não forem strings vazias
+  -- Predicado de validação: um usuário é válido se nome e email não forem strings vazias
   eq valido?(usuario(ID, N, E)) = (N =/= "") and (E =/= "") .
 }
 

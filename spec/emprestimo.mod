@@ -7,44 +7,83 @@ mod! EMPRESTIMO {
 
   [ Emprestimo < ConjuntoEmprestimos ]
 
-  -- Operador construtor de um empréstimo individual: "emprestar livro L ao usuário U"
-  op emprestar : LivroId UsuarioId -> Emprestimo { constr }
-
-  -- Elemento neutro (nenhum empréstimo realizado)
+  -- Construtores do Monóide (coleção comutativa com elemento neutro)
   op semEmprestimo : -> ConjuntoEmprestimos { constr }
-
-  -- União de multiconjuntos: cada ocorrência de empréstimo é contada.
+  op emprestar : LivroId UsuarioId -> ConjuntoEmprestimos { constr }
   op __ : ConjuntoEmprestimos ConjuntoEmprestimos -> ConjuntoEmprestimos { constr assoc comm id: semEmprestimo }
 
-  vars L L2 : LivroId
-  vars U U2 : UsuarioId
+  -- Modificadores
+  op iniciarEmprestimos : -> ConjuntoEmprestimos
+  op emprestar : LivroId UsuarioId ConjuntoEmprestimos -> ConjuntoEmprestimos
+  op devolver : LivroId ConjuntoEmprestimos -> ConjuntoEmprestimos
+
+  -- Consultas
+  op qtdEmprestimos : ConjuntoEmprestimos -> Nat
+
+  -- Predicados
+  pred emprestado? : LivroId ConjuntoEmprestimos
+  pred temLivro? : UsuarioId LivroId ConjuntoEmprestimos
+  pred temLivro? : UsuarioId ConjuntoEmprestimos
+  pred livrosUnicos? : ConjuntoEmprestimos
+
+  -- Variáveis usadas nas equações
+  vars LID LID2 : LivroId
+  vars UID UID2 : UsuarioId
   var  ES   : ConjuntoEmprestimos
 
-  -- Sem idempotência: E E tem duas ocorrências, coerentemente com qtdEmprestimos.
-  
-  -- Consulta: Verifica se um determinado livro está emprestado
-  pred emprestado? : LivroId ConjuntoEmprestimos
-  eq emprestado?(L, semEmprestimo) = false .
-  eq emprestado?(L, emprestar(L, U) ES) = true .
-  ceq emprestado?(L, emprestar(L2, U) ES) = emprestado?(L, ES) if L =/= L2 .
-  
-  -- Consulta: Verifica se determinado usuário possui determinado livro
-  pred temLivro? : UsuarioId LivroId ConjuntoEmprestimos
-  eq temLivro?(U, L, semEmprestimo) = false .
-  eq temLivro?(U, L, emprestar(L, U) ES) = true .
-  ceq temLivro?(U, L, emprestar(L2, U2) ES) = temLivro?(U, L, ES) if (L =/= L2) or (U =/= U2) .
-  
-  -- Operação da coleção: remove todos os registros do livro, mesmo em
-  -- coleções inconsistentes. A autorização do usuário caberá a BIBLIOTECA.
-  op devolver : LivroId ConjuntoEmprestimos -> ConjuntoEmprestimos
-  eq devolver(L, semEmprestimo) = semEmprestimo .
-  eq devolver(L, emprestar(L, U) ES) = devolver(L, ES) .
-  ceq devolver(L, emprestar(L2, U) ES) = emprestar(L2, U) devolver(L, ES) if L =/= L2 .
+  -- Construtor de coleção vazia
+  eq iniciarEmprestimos = semEmprestimo .
 
-  -- Consulta: Quantidade de empréstimos ativos
-  op qtdEmprestimos : ConjuntoEmprestimos -> Nat
+  -- Adiciona um emprestimo à coleção, sem duplicatas
+  eq emprestar(LID, UID, ES) = 
+    if temLivro?(UID, LID, ES) 
+    then ES 
+    else emprestar(LID, UID) ES 
+    fi .
+
+  -- Devolver um livro remove todos os registros do livro, mesmo em coleções inconsistentes.
+  eq devolver(LID, semEmprestimo) = semEmprestimo .
+  eq devolver(LID, emprestar(LID2, UID) ES) =
+    if LID == LID2 
+    then devolver(LID, ES) 
+    else emprestar(LID2, UID) devolver(LID, ES) 
+    fi .
+
+  -- Consulta a quantidade de empréstimos ativos
   eq qtdEmprestimos(semEmprestimo) = 0 .
-  eq qtdEmprestimos(emprestar(L, U) ES) = 1 + qtdEmprestimos(ES) .
+  eq qtdEmprestimos(emprestar(LID, UID) ES) = 1 + qtdEmprestimos(ES) .
+  
+  -- Predicado que verifica se um determinado livro está emprestado
+  eq emprestado?(LID, semEmprestimo) = false .
+  eq emprestado?(LID, emprestar(LID2, UID) ES) = 
+    if LID == LID2 
+    then true 
+    else emprestado?(LID, ES) 
+    fi .
+  
+  -- Predicado que verifica se determinado usuário possui determinado livro
+  eq temLivro?(UID, LID, semEmprestimo) = false .
+  eq temLivro?(UID, LID, emprestar(LID2, UID2) ES) = 
+    if (LID == LID2) and (UID == UID2) 
+    then true 
+    else temLivro?(UID, LID, ES) 
+    fi .
+
+  -- Predicado que verifica se determinado usuário possui qualquer livro
+  eq temLivro?(UID, semEmprestimo) = false .
+  eq temLivro?(UID, emprestar(LID, UID2) ES) = 
+    if (UID == UID2) 
+    then true 
+    else temLivro?(UID, ES) 
+    fi .
+
+  -- Predicado que verifica se cada livro emprestado é único, ou seja, não há duplicatas de empréstimos do mesmo livro.
+  eq livrosUnicos?(semEmprestimo) = true .
+  eq livrosUnicos?(emprestar(LID, UID) ES) = 
+    if emprestado?(LID, ES)
+    then false
+    else livrosUnicos?(ES)
+    fi .
 }
 
 provide emprestimo
