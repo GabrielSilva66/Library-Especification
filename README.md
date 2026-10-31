@@ -62,7 +62,7 @@ The system manages a library collection and book loans made by registered users:
 │   ├── colecao-usuarios.mod # User collection and queries
 │   ├── emprestimo.mod      # Loan relationships and pending items
 │   ├── biblioteca.mod      # Global state, projections and queries
-│   ├── demo.cafe           # 19 illustrative reductions
+│   ├── demo.cafe           # Real-world scenario reductions (lifecycle, rules, invariants)
 │   ├── teste-carregamento.cafe # Module loading checks
 │   ├── teste-colecao-usuarios.cafe # User collection assertions
 │   ├── teste-emprestimo.cafe # Loan collection assertions

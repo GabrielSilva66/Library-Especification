@@ -1,114 +1,139 @@
 -- ============================================================
--- demo.cafe: Exemplos práticos e testes de reescrita
+-- demo.cafe: Especificação BIBLIOTECA em ação (Cenário Real)
 --
--- Para executar:
---  cafeobj -batch demo.cafe
+-- Demonstração prática do ciclo de vida da biblioteca:
+-- cadastro de acervo, registro de usuários, empréstimos, devoluções,
+-- consultas de catálogo, bloqueio de operações inválidas e
+-- preservação dos invariantes globais.
+--
+-- Execução: cafeobj -batch demo.cafe
 -- ============================================================
-require acervo acervo.mod
+require biblioteca biblioteca.mod
 
-open ACERVO .
+mod! DEMO-BIBLIOTECA {
+  protecting(BIBLIOTECA)
 
-  -- Identificadores atômicos para testes
-  ops l1 l2 l3 l4 lInexistente : -> LivroId .
-  ops obAlg obCC obComp        : -> ObraId .
+  -- Identificadores de exemplares e obras catalogadas
+  ops l1 l2 l3 l4 l5 l6 lx : -> LivroId .
+  ops obAlg obCC obComp obAlgor obES : -> ObraId .
 
-  -- Exemplares de Livros
-  -- Nota: l1 e l2 são dois exemplares físicos diferentes da MESMA obra (obAlg)
-  op livro1 : -> Livro .
-  op livro2 : -> Livro .
-  op livro3 : -> Livro .
-  op livro4 : -> Livro .
+  -- Identificadores de usuários
+  ops u1 u2 u3 u4 ux : -> UsuarioId .
+
+  -- Exemplares de Livros físicos
+  -- Nota: l1 e l2 são dois exemplares físicos da mesma obra (obAlg)
+  ops livro1 livro2 livro3 livro4 livro5 livro6 : -> Livro .
   op livroInvalido : -> Livro .
 
-  eq livro1 = livro(l1, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
-  eq livro2 = livro(l2, obAlg, "Estruturas Algebricas", "Valdigleis S. Costa", 2026) .
-  eq livro3 = livro(l3, obCC,  "Clean Code",            "Robert C. Martin",    2008) .
-  eq livro4 = livro(l4, obComp,"Compiladores",          "Alfred Aho",          2006) .
+  eq livro1 = livro(l1, obAlg,   "Estruturas Algebricas",  "Valdigleis S. Costa", 2026) .
+  eq livro2 = livro(l2, obAlg,   "Estruturas Algebricas",  "Valdigleis S. Costa", 2026) .
+  eq livro3 = livro(l3, obCC,    "Clean Code",             "Robert C. Martin",    2008) .
+  eq livro4 = livro(l4, obComp,  "Compiladores",           "Alfred Aho",          2006) .
+  eq livro5 = livro(l5, obAlgor, "Algoritmos: Teoria e Pratica", "Thomas Cormen", 2009) .
+  eq livro6 = livro(l6, obES,    "Engenharia de Software", "Ian Sommerville",     2011) .
   eq livroInvalido = livro(l1, obAlg, "", "", 0) .
 
-  -- Acervo de Teste 
-  op acervoTeste : -> Acervo .
-  eq acervoTeste = livro1 livro2 livro3 livro4 .
+  -- Usuários do sistema
+  ops ana bruno carla davi : -> Usuario .
+  op usuarioInvalido : -> Usuario .
 
-  -- ============================================================
-  -- PARTE 1: Testes da Entidade LIVRO (Projeções e Validação)
-  -- ============================================================
+  eq ana   = usuario(u1, "Ana Souza",     "ana@email.com") .
+  eq bruno = usuario(u2, "Bruno Lima",    "bruno@email.com") .
+  eq carla = usuario(u3, "Carla Mendes",  "carla@email.com") .
+  eq davi  = usuario(u4, "Davi Oliveira", "davi@email.com") .
+  eq usuarioInvalido = usuario(u1, "Fantasma", "") .
 
-  -- (1.1) Extrair o título do livro 1:
-  red titulo(livro1) .
+  -- Biblioteca inicial (biblioteca0):
+  -- Começa vazia e recebe o cadastro inicial de 5 livros e 4 usuários
+  op biblioteca0 : -> Biblioteca .
+  eq biblioteca0 =
+    registrarLivro(livro5,
+    registrarLivro(livro4,
+    registrarLivro(livro3,
+    registrarLivro(livro2,
+    registrarLivro(livro1,
+    registrarUsuario(davi,
+    registrarUsuario(carla,
+    registrarUsuario(bruno,
+    registrarUsuario(ana,
+      bibliotecaVazia))))))))) .
 
-  -- (1.2) Extrair a obra/ISBN do livro 1:
-  red obra(livro1) .
+  -- Biblioteca após movimentações de uma semana típica (biblioteca1):
+  --   1. Ana pega emprestado o exemplar 1 de Estruturas Algébricas (l1)
+  --   2. Bruno pega emprestado Clean Code (l3)
+  --   3. Carla pega emprestado Compiladores (l4)
+  --   4. Davi tenta pegar o exemplar 1 (já emprestado para Ana) -> ignorado/preservado
+  --   5. Davi pega emprestado o exemplar 2 da mesma obra (l2) -> sucesso!
+  --   6. Ana devolve o exemplar 1 (l1) -> l1 torna-se disponível novamente
+  --   7. Um novo livro (livro6: Engenharia de Software) é catalogado e inserido
+  op biblioteca1 : -> Biblioteca .
+  eq biblioteca1 =
+    registrarLivro(livro6,
+      devolverLivro(l1, u1,
+        emprestarLivro(l2, u4,
+          emprestarLivro(l1, u4,
+            emprestarLivro(l4, u3,
+              emprestarLivro(l3, u2,
+                emprestarLivro(l1, u1,
+                  biblioteca0))))))) .
+}
 
-  -- (1.3) Validar livro com dados corretos (deve retornar true):
-  red valido?(livro1) .
+select DEMO-BIBLIOTECA .
 
-  -- (1.4) Validar livro com campos vazios e ano zero (deve retornar false):
-  red valido?(livroInvalido) .
+-- (1) Estado inicial da biblioteca
+red qtdAcervo(biblioteca0) .                                  -- 5 livros no total
+red qtdUsuarios(biblioteca0) .                                -- 4 usuários cadastrados
+red qtdEmprestimos(biblioteca0) .                             -- 0 empréstimos
+red qtdDisponiveis(biblioteca0) .                             -- 5 livros disponíveis
 
-  -- ============================================================
-  -- PARTE 2: Consultas e Cardinalidade no ACERVO
-  -- ============================================================
+-- (2) Tentativa de cadastro com dados duplicados ou inválidos (rejeitados)
+red qtdAcervo(registrarLivro(livro1, biblioteca0)) .          -- 5 (não duplica l1)
+red qtdAcervo(registrarLivro(livroInvalido, biblioteca0)) .   -- 5 (rejeita livro inválido)
+red qtdUsuarios(registrarUsuario(ana, biblioteca0)) .         -- 4 (não duplica Ana)
+red qtdUsuarios(registrarUsuario(usuarioInvalido, biblioteca0)) . -- 4 (rejeita e-mail vazio)
 
-  -- (2.1) Quantidade total de exemplares físicos no acervo (esperado: 4):
-  red qtdAcervo(acervoTeste) .
+-- (3) Consultas de catálogo no estado inicial
+red buscarLivro(l3, biblioteca0) .                            -- livro3 ("Clean Code")
+red buscarLivro(lx, biblioteca0) .                            -- livroInexistente
+red qtdAcervo(buscarTitulo("Estruturas Algebricas", biblioteca0)) . -- 2 exemplares
+red qtdExemplaresObra(obAlg, biblioteca0) .                   -- 2 exemplares de obAlg
+red qtdAcervo(tituloDeAutor("Robert C. Martin", biblioteca0)) . -- 1 exemplar
 
-  -- (2.2) Quantidade de exemplares da obra 'obAlg' (esperado: 2 cópias):
-  red qtdExemplaresObra(obAlg, acervoTeste) .
+-- (4) Estado da biblioteca após o ciclo de movimentação (biblioteca1)
+red qtdAcervo(biblioteca1) .                                  -- 6 (5 iniciais + livro6)
+red qtdEmprestimos(biblioteca1) .                             -- 3 empréstimos ativos (l3 com Bruno, l4 com Carla, l2 com Davi)
+red qtdDisponiveis(biblioteca1) .                             -- 3 disponíveis (l1 devolvido, l5 livre, l6 recém-chegado)
+red (qtdDisponiveis(biblioteca1) + qtdEmprestimos(biblioteca1)) == qtdAcervo(biblioteca1) . -- true (conservação)
 
-  -- (2.3) Quantidade de exemplares de 'Clean Code' (esperado: 1 cópia):
-  red qtdExemplaresObra(obCC, acervoTeste) .
+-- (5) Verificação de disponibilidade e posse de exemplares
+red emprestado?(l1, biblioteca1) .                            -- false (Ana devolveu l1)
+red disponivel?(l1, biblioteca1) .                            -- true (l1 está na prateleira)
+red emprestado?(l2, biblioteca1) .                            -- true (l2 está com Davi)
+red disponivel?(l2, biblioteca1) .                            -- false
+red temLivro?(u4, l2, biblioteca1) .                          -- true (Davi possui o exemplar l2)
+red temLivro?(u2, l3, biblioteca1) .                          -- true (Bruno possui Clean Code)
+red temLivro?(u1, l1, biblioteca1) .                          -- false (Ana já devolveu)
 
-  -- ============================================================
-  -- PARTE 3: Pertinência e Busca por ID (com Tratamento de Erro)
-  -- ============================================================
+-- (6) Operações inválidas bloqueadas pelas regras de negócio
+-- Bruno tenta pegar l2 que já está emprestado a Davi: recusado, mantém 3 empréstimos
+red qtdEmprestimos(emprestarLivro(l2, u2, biblioteca1)) .     -- 3
+-- Emprestar livro que não existe no acervo: recusado
+red qtdEmprestimos(emprestarLivro(lx, u1, biblioteca1)) .     -- 3
+-- Emprestar para usuário não cadastrado: recusado
+red qtdEmprestimos(emprestarLivro(l1, ux, biblioteca1)) .     -- 3
+-- Ana tenta devolver o livro que está com Davi (l2): recusado
+red qtdEmprestimos(devolverLivro(l2, u1, biblioteca1)) .      -- 3
+-- Tentativa de remover do acervo livro que está emprestado (l2 com Davi): recusado
+red qtdAcervo(removerLivro(l2, biblioteca1)) .                -- 6 (l2 não pode ser descartado)
+-- Tentativa de remover usuário que possui empréstimo ativo (Davi tem l2): recusado
+red qtdUsuarios(removerUsuario(u4, biblioteca1)) .            -- 4 (Davi não pode ser descadastrado)
+-- Remoção válida de livro disponível (livro6): sucesso
+red qtdAcervo(removerLivro(l6, biblioteca1)) .                -- 5
+-- Remoção válida de usuário sem empréstimo (Ana): sucesso
+red qtdUsuarios(removerUsuario(u1, biblioteca1)) .            -- 3
 
-  -- (3.1) O exemplar l1 pertence ao acervo? (esperado: true):
-  red pertenceAcervo?(l1, acervoTeste) .
-
-  -- (3.2) Um identificador que não foi cadastrado pertence ao acervo? (esperado: false):
-  red pertenceAcervo?(lInexistente, acervoTeste) .
-
-  -- (3.3) Buscar livro existente (retorna o próprio termo do Livro):
-  red buscarLivro(l3, acervoTeste) .
-
-  -- (3.4) Buscar livro inexistente (caso inválido: retorna livroInexistente do supersort):
-  red buscarLivro(lInexistente, acervoTeste) .
-
-  -- ============================================================
-  -- PARTE 4: Filtros por Título e por Autor
-  -- ============================================================
-
-  -- (4.1) Filtrar todos os livros com título "Compiladores":
-  red buscarTitulo("Compiladores", acervoTeste) .
-
-  -- (4.2) Filtrar acervo por autor "Valdigleis S. Costa" (esperado: 2 exemplares):
-  red qtdAcervo(tituloDeAutor("Valdigleis S. Costa", acervoTeste)) .
-
-  -- ============================================================
-  -- PARTE 5: Remoção de Exemplar do Acervo
-  -- ============================================================
-
-  -- (5.1) Remover o exemplar l2 (a quantidade deve cair de 4 para 3):
-  red qtdAcervo(removerDoAcervo(l2, acervoTeste)) .
-
-  -- (5.2) Após remover l2, a obra 'obAlg' agora possui apenas 1 exemplar:
-  red qtdExemplaresObra(obAlg, removerDoAcervo(l2, acervoTeste)) .
-
-  -- (5.3) Tentar remover um exemplar que não existe (acervo permanece inalterado):
-  red qtdAcervo(removerDoAcervo(lInexistente, acervoTeste)) .
-
-  -- ============================================================
-  -- PARTE 6: Invariantes de Consistência do Sistema
-  -- ============================================================
-
-  -- (6.1) Todos os livros do acervo de teste são válidos? (esperado: true):
-  red todosValidos?(acervoTeste) .
-
-  -- (6.2) Os identificadores do acervo são estritamente únicos? (esperado: true):
-  red idsUnicos?(acervoTeste) .
-
-  -- (6.3) Teste de violação de unicidade (adicionando livro1 duplicado no acervo):
-  red idsUnicos?(livro1 acervoTeste) .
-
-close
+-- (7) Invariantes de consistência global
+red valido?(biblioteca0) .                                    -- true (estado inicial íntegro)
+red valido?(biblioteca1) .                                    -- true (estado após operações íntegro)
+-- Estado montado à mão violando unicidade de empréstimo (mesmo livro para dois usuários)
+red valido?(biblioteca(livro1, ana bruno, emprestar(l1, u1) emprestar(l1, u2))) . -- false
