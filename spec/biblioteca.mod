@@ -18,7 +18,7 @@ mod! BIBLIOTECA {
   op emprestimos : Biblioteca -> ConjuntoEmprestimos
 
   -- Modificadores
-  op adicionarLivro : Livro Biblioteca -> Biblioteca
+  op registrarLivro : Livro Biblioteca -> Biblioteca
   op removerLivro : LivroId Biblioteca -> Biblioteca
   op registrarUsuario : Usuario Biblioteca -> Biblioteca
   op removerUsuario : UsuarioId Biblioteca -> Biblioteca
@@ -30,15 +30,19 @@ mod! BIBLIOTECA {
   op qtdUsuarios : Biblioteca -> Nat
   op qtdEmprestimos : Biblioteca -> Nat
   op qtdDisponiveis : Biblioteca -> Nat
+  op buscarLivro : LivroId Biblioteca -> LivroOuErro
+  op buscarTitulo : String Biblioteca -> Acervo
+  op qtdExemplaresObra : ObraId Biblioteca -> Nat
+  op tituloDeAutor : String Biblioteca -> Acervo
   op contarDisponiveis : Acervo ConjuntoEmprestimos -> Nat
 
   -- Predicados
-  pred pertenceAcervo? : Biblioteca LivroId
-  pred usuarioRegistrado? : Biblioteca UsuarioId
-  pred emprestado? : Biblioteca LivroId
-  pred temLivro? : Biblioteca UsuarioId LivroId
-  pred temLivro? : Biblioteca UsuarioId
-  pred disponivel? : Biblioteca LivroId
+  pred pertenceAcervo? : LivroId Biblioteca
+  pred usuarioRegistrado? : UsuarioId Biblioteca
+  pred emprestado? : LivroId Biblioteca
+  pred temLivro? : UsuarioId LivroId Biblioteca
+  pred temLivro? : UsuarioId Biblioteca
+  pred disponivel? : LivroId Biblioteca
   pred emprestimosValidos? : Biblioteca
   pred valido? : Biblioteca
 
@@ -51,6 +55,8 @@ mod! BIBLIOTECA {
   var L : Livro
   var LID : LivroId
   var UID : UsuarioId
+  var T : String
+  var OID : ObraId
 
   -- Construtor de biblioteca vazia
   eq bibliotecaVazia = biblioteca(vazioAcervo, vazioUsuarios, semEmprestimo) .
@@ -61,11 +67,11 @@ mod! BIBLIOTECA {
   eq emprestimos(biblioteca(A, US, ES)) = ES .
 
   -- Adiciona um livro ao acervo da biblioteca
-  eq adicionarLivro(L, biblioteca(A, US, ES)) = biblioteca(adicionarLivro(L, A), US, ES) .
+  eq registrarLivro(L, biblioteca(A, US, ES)) = biblioteca(adicionarLivro(L, A), US, ES) .
 
   -- Remove um livro do acervo da biblioteca
   eq removerLivro(LID, biblioteca(A, US, ES)) = 
-    if disponivel?(biblioteca(A, US, ES), LID) 
+    if disponivel?(LID, biblioteca(A, US, ES)) 
     then biblioteca(removerDoAcervo(LID, A), US, ES)
     else biblioteca(A, US, ES) 
     fi .
@@ -81,13 +87,13 @@ mod! BIBLIOTECA {
     fi .
 
   eq emprestarLivro(LID, UID, biblioteca(A, US, ES)) = 
-    if disponivel?(biblioteca(A, US, ES), LID) and usuarioRegistrado?(biblioteca(A, US, ES), UID)
+    if disponivel?(LID, biblioteca(A, US, ES)) and usuarioRegistrado?(UID, biblioteca(A, US, ES))
     then biblioteca(A, US, emprestar(LID, UID, ES))
     else biblioteca(A, US, ES)
     fi .
 
   eq devolverLivro(LID, UID, biblioteca(A, US, ES)) = 
-    if temLivro?(biblioteca(A, US, ES), UID, LID) 
+    if temLivro?(UID, LID, biblioteca(A, US, ES)) 
     then biblioteca(A, US, devolver(LID, ES))
     else biblioteca(A, US, ES)
     fi .
@@ -101,6 +107,18 @@ mod! BIBLIOTECA {
   -- Consulta a quantidade de empréstimos ativos
   eq qtdEmprestimos(B) = qtdEmprestimos(emprestimos(B)) .
 
+  -- Consulta um livro pelo seu ID, retornando um LivroOuErro
+  eq buscarLivro(LID, B) = buscarLivro(LID, acervo(B)) .
+  
+  -- Consulta livros pelo título, retornando um sub-acervo
+  eq buscarTitulo(T, B) = buscarTitulo(T, acervo(B)) .
+
+  -- Consulta a quantidade de exemplares de uma obra específica
+  eq qtdExemplaresObra(OID, B) = qtdExemplaresObra(OID, acervo(B)) .
+
+  -- Consulta livros de um autor específico, retornando um sub-acervo
+  eq tituloDeAutor(T, B) = tituloDeAutor(T, acervo(B)) .  
+
   -- Consulta a quantidade de livros disponíveis para empréstimo
   eq qtdDisponiveis(B) = contarDisponiveis(acervo(B), emprestimos(B)) .
 
@@ -112,22 +130,22 @@ mod! BIBLIOTECA {
     fi .
 
   -- Predicado que verifica se um livro está no acervo da biblioteca
-  eq pertenceAcervo?(B, LID) = pertenceAcervo?(LID, acervo(B)) .
+  eq pertenceAcervo?(LID, B) = pertenceAcervo?(LID, acervo(B)) .
 
   -- Predicado que verifica se um usuário está registrado na biblioteca
-  eq usuarioRegistrado?(B, UID) = pertence?(UID, usuarios(B)) .
+  eq usuarioRegistrado?(UID, B) = pertence?(UID, usuarios(B)) .
   
   -- Predicado que verifica se um livro está emprestado
-  eq emprestado?(B, LID) = emprestado?(LID, emprestimos(B)) .
+  eq emprestado?(LID, B) = emprestado?(LID, emprestimos(B)) .
 
   -- Predicado que verifica se um determinado usuário possui um determinado livro emprestado
-  eq temLivro?(B, UID, LID) = temLivro?(UID, LID, emprestimos(B)) .
+  eq temLivro?(UID, LID, B) = temLivro?(UID, LID, emprestimos(B)) .
 
   -- Predicado que verifica se um determinado usuário possui qualquer livro emprestado
-  eq temLivro?(B, UID) = temLivro?(UID, emprestimos(B)) .
+  eq temLivro?(UID, B) = temLivro?(UID, emprestimos(B)) .
 
   -- Predicado que verifica se um livro está disponivel para empréstimo
-  eq disponivel?(B, LID) = pertenceAcervo?(B, LID) and not emprestado?(B, LID) .
+  eq disponivel?(LID, B) = pertenceAcervo?(LID, B) and not emprestado?(LID, B) .
 
   -- Predicado que verifica se todos os empréstimos são válidos, ou seja, se cada livro emprestado pertence ao acervo e cada usuário que possui um livro emprestado está registrado na biblioteca.
   eq emprestimosValidos?(biblioteca(A, US, semEmprestimo)) = true .

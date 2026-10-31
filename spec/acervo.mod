@@ -53,9 +53,9 @@ mod! ACERVO {
 
   -- Adiciona um livro ao acervo, sem duplicatas
   eq adicionarLivro(L, A) = 
-    if pertenceAcervo?(id(L), A)
-    then A
-    else L A
+    if not(pertenceAcervo?(id(L), A)) and valido?(L) 
+    then L A
+    else A
     fi .
 
   -- Remove todas as ocorrências do ID, sem depender da ordem de casamento.

@@ -2,22 +2,171 @@ require biblioteca biblioteca.mod
 
 open BIBLIOTECA .
 
-ops l1 l2 lx : -> LivroId .
-ops u1 u2 ux : -> UsuarioId .
+ops l1 l2 li lx : -> LivroId .
+ops u1 u2 ui ux : -> UsuarioId .
 ops ob1 ob2 : -> ObraId .
-ops livro1 livro2 : -> Livro .
-ops ana bia : -> Usuario .
-ops bLivre bEmprestada bTodosEmprestados bSemAcervo bSemUsuario : -> Biblioteca .
+ops livro1 livro2 livroInv : -> Livro .
+ops ana bia inv : -> Usuario .
+ops bVazia bLivre bEmprestada bTodosEmprestados bSemAcervo bSemUsuario : -> Biblioteca .
+ops bEmprestimoDuplicado bLivroDuplicado bLivroInvalido : -> Biblioteca .
+ops bUsuarioInvalido bUsuarioDuplicado : -> Biblioteca .
 
 eq livro1 = livro(l1, ob1, "Algebra", "Autor", 2026) .
 eq livro2 = livro(l2, ob2, "Algebra", "Autor", 2026) .
+eq livroInv = livro(li, ob2, "", "Autor", 2026) .
 
 eq ana = usuario(u1, "Ana", "ana@exemplo.com") .
 eq bia = usuario(u2, "Bia", "bia@exemplo.com") .
+eq inv = usuario(ui, "Inv", "") .
 
+eq bVazia = biblioteca(vazioAcervo, vazioUsuarios, semEmprestimo) .
 eq bLivre = biblioteca(livro1 livro2, ana bia, semEmprestimo) .
 eq bEmprestada = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1)) .
 eq bTodosEmprestados = biblioteca(livro1 livro2, ana bia, emprestar(l1, u1) emprestar(l2, u1)) .
 -- Estados inconsistentes construidos deliberadamente: observadores nao os corrigem.
 eq bSemAcervo = biblioteca(vazioAcervo, ana, emprestar(lx, u1)) .
 eq bSemUsuario = biblioteca(livro1, vazioUsuarios, emprestar(l1, ux)) .
+eq bEmprestimoDuplicado = biblioteca(livro1, ana bia, emprestar(l1, u1) emprestar(l1, u2)) .
+eq bLivroDuplicado = biblioteca(livro1 livro1, ana, emprestar(l1, u1)) .
+eq bLivroInvalido = biblioteca(livro1 livroInv, ana, emprestar(l1, u1)) .
+eq bUsuarioDuplicado = biblioteca(livro1, ana ana, emprestar(l1, u1)) .
+eq bUsuarioInvalido = biblioteca(livro1, ana inv, emprestar(l1, u1)) .
+
+-- Reduções
+
+-- Verificando os estados inconsistentes
+red valido?(bSemAcervo) == false .
+red valido?(bSemUsuario) == false .
+red valido?(bEmprestimoDuplicado) == false .
+red valido?(bLivroDuplicado) == false .
+red valido?(bLivroInvalido) == false .
+red valido?(bUsuarioDuplicado) == false .
+red valido?(bUsuarioInvalido) == false .
+
+-- Verificando projeções
+red acervo(bLivre) == (livro1 livro2) .
+red usuarios(bLivre) == (ana bia) .
+red emprestimos(bLivre) == semEmprestimo .
+red acervo(bEmprestada) == (livro1 livro2) .
+red usuarios(bEmprestada) == (ana bia) .
+red emprestimos(bEmprestada) == emprestar(l1, u1) .
+
+-- Verificando modificadores
+
+-- Inserir livro válido
+red acervo(registrarLivro(livro1, bVazia)) == (livro1) .
+-- Inserir livro duplicado
+red acervo(registrarLivro(livro1, bLivre)) == (livro1 livro2) .
+-- Inserir livro inválido
+red acervo(registrarLivro(livroInv, bLivre)) == (livro1 livro2) .
+
+-- Inserir usuário válido
+red usuarios(registrarUsuario(ana, bVazia)) == (ana) .
+-- Inserir usuário duplicado
+red usuarios(registrarUsuario(ana, bLivre)) == (ana bia) .
+-- Inserir usuário inválido
+red usuarios(registrarUsuario(inv, bLivre)) == (ana bia) .
+
+-- Emprestar livro válido
+red emprestimos(emprestarLivro(l1, u1, bLivre)) == emprestar(l1, u1) .
+-- Emprestar livro já emprestado
+red emprestimos(emprestarLivro(l1, u1, bEmprestada)) == emprestar(l1, u1) .
+-- Emprestar livro inexistente
+red emprestimos(emprestarLivro(lx, u1, bLivre)) == semEmprestimo .
+-- Emprestar livro para usuário inexistente
+red emprestimos(emprestarLivro(l1, ux, bLivre)) == semEmprestimo .
+-- Emprestar livro já emprestado para outro usuário
+red emprestimos(emprestarLivro(l1, u2, bEmprestada)) == emprestar(l1, u1) .
+
+-- Remover livro válido
+red acervo(removerLivro(l1, bLivre)) == (livro2) .
+-- Remover livro inexistente
+red acervo(removerLivro(lx, bLivre)) == (livro1 livro2) .
+-- Remover livro emprestado
+red acervo(removerLivro(l1, bEmprestada)) == (livro1 livro2) .
+
+-- Remover usuário válido
+red usuarios(removerUsuario(u1, bLivre)) == (bia) .
+-- Remover usuário inexistente
+red usuarios(removerUsuario(ux, bLivre)) == (ana bia) .
+-- Remover usuário com empréstimo ativo
+red usuarios(removerUsuario(u1, bEmprestada)) == (ana bia) .
+
+-- Devolver livro válido
+red emprestimos(devolverLivro(l1, u1, bEmprestada)) == semEmprestimo .
+-- Devolver livro inexistente
+red emprestimos(devolverLivro(lx, u1, bEmprestada)) == emprestar(l1, u1) .
+-- Devolver livro para usuário inexistente
+red emprestimos(devolverLivro(l1, ux, bEmprestada)) == emprestar(l1, u1) .
+-- Devolver livro que não está emprestado
+red emprestimos(devolverLivro(l2, u1, bEmprestada)) == emprestar(l1, u1) .
+
+-- Combinações de operações
+-- Emprestar e devolver livro
+red emprestimos(devolverLivro(l1, u1, emprestarLivro(l1, u1, bLivre))) == semEmprestimo .
+
+-- Consultas
+-- Consultar a quantidade de livros no acervo
+red qtdDisponiveis(bLivre) == 2 .
+
+-- Consultar a quantidade de usuários cadastrados
+red qtdUsuarios(bLivre) == 2 .
+
+-- Consultar a quantidade de empréstimos ativos
+red qtdEmprestimos(bLivre) == 0 .
+red qtdEmprestimos(bEmprestada) == 1 .
+
+-- Consultar a quantidade de livros disponíveis para empréstimo
+red qtdDisponiveis(bLivre) == 2 .
+red qtdDisponiveis(bEmprestada) == 1 .
+
+-- Verificar soma de empréstimos ativos e livros disponíveis
+red qtdDisponiveis(bLivre) + qtdEmprestimos(bLivre) == qtdAcervo(bLivre) .
+red qtdDisponiveis(bEmprestada) + qtdEmprestimos(bEmprestada) == qtdAcervo(bEmprestada) .
+
+-- Consultar livro por ID
+red buscarLivro(l1, bLivre) == livro1 .
+red buscarLivro(lx, bLivre) == livroInexistente .
+
+-- Consultar livros por título
+red buscarTitulo("Algebra", bLivre) == (livro1 livro2) .
+red buscarTitulo("Geometria", bLivre) == vazioAcervo .
+
+-- Consultar quantidade de exemplares de uma obra
+red qtdExemplaresObra(ob1, bLivre) == 1 .
+red qtdExemplaresObra(ob2, bLivre) == 1 .
+
+-- Consultar livros por autor
+red tituloDeAutor("Autor", bLivre) == (livro1 livro2) .
+red tituloDeAutor("Autor2", bLivre) == vazioAcervo .
+
+-- Predicados
+-- Predicado que verifica se um livro pertence ao acervo da biblioteca
+red pertenceAcervo?(l1, bLivre) == true .
+red pertenceAcervo?(lx, bLivre) == false .
+
+-- Predicado que verifica se um usuário está registrado na biblioteca
+red usuarioRegistrado?(u1, bLivre) == true .
+red usuarioRegistrado?(ux, bLivre) == false .
+
+-- Predicado que verifica se um livro está emprestado
+red emprestado?(l1, bEmprestada) == true .
+red emprestado?(l2, bEmprestada) == false .
+
+-- Predicado que verifica se um determinado usuário possui um determinado livro emprestado
+red temLivro?(u1, l1, bEmprestada) == true .
+red temLivro?(u1, l2, bEmprestada) == false .
+
+-- Predicado que verifica se um determinado usuário possui qualquer livro emprestado
+red temLivro?(u1, bEmprestada) == true .
+red temLivro?(u2, bEmprestada) == false .
+
+-- Predicado que verifica se um livro está disponível para empréstimo
+red disponivel?(l1, bEmprestada) == false .
+red disponivel?(l2, bEmprestada) == true .
+
+-- Predicado que verifica se todos os empréstimos são válidos, ou seja, se cada livro emprestado pertence ao acervo e cada usuário que possui um livro emprestado está registrado na biblioteca.
+red emprestimosValidos?(bEmprestada) == true .
+
+-- Fim
+close

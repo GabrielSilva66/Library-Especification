@@ -66,10 +66,11 @@ graph TD
   - Construtor canônico: `op biblioteca : Acervo ConjuntoUsuarios ConjuntoEmprestimos -> Biblioteca { constr }`.
   - Estado inicial: `bibliotecaVazia = biblioteca(vazioAcervo, vazioUsuarios, semEmprestimo)`.
   - Projeções: `acervo`, `usuarios`, `emprestimos`.
+  - Modificadores e transições de estado: `registrarLivro`, `removerLivro`, `registrarUsuario`, `removerUsuario`, `emprestarLivro`, `devolverLivro`.
   - Consultas e observadores de estado: `pertenceAcervo?`, `usuarioRegistrado?`, `emprestado?`, `temLivro?`, `disponivel?`.
-  - Predicados de consistência global: `valido? : Biblioteca` e auxiliar `emprestimosValidos? : Biblioteca`.
+  - Consultas de catálogo no estado global: `buscarLivro`, `buscarTitulo`, `qtdExemplaresObra`, `tituloDeAutor`.
+  - Predicados de consistência global: `valido? : Biblioteca` e auxiliares `emprestimosValidos? : Biblioteca`, `livrosUnicos?`, `idsUnicos?`, `todosValidos?`.
   - Contagens globais: `qtdAcervo`, `qtdUsuarios`, `qtdEmprestimos`, `qtdDisponiveis` (via auxiliar `contarDisponiveis`).
-  - *Pendente*: Operações de transição de estado da biblioteca com pré-condições (ex.: `adicionarLivro`, `removerLivro`, `registrarUsuario`, `removerUsuario`, `emprestarLivro`, `devolverLivro`) e invariante global de consistência.
 
 ---
 
@@ -120,29 +121,29 @@ Lista estruturada a partir dos requisitos exigidos no documento oficial **Trabal
   - [x] Casos normais e casos base/vazio definidos em todos os módulos
   - [x] Casos de fronteira nas coleções e observadores globais
   - [x] Tratamento de elemento procurado inexistente (`livroInexistente`, retorno booleano `false`, preservação de coleção)
-  - [ ] Equações de transição de estado da biblioteca com tratamento de pré-condições
+  - [x] Equações de transição de estado da biblioteca com tratamento de pré-condições
 - [x] **4.4. Estruturas de Dados**: Modelagem algébrica das coleções como monóides comutativos com identidade (`vazioAcervo`, `vazioUsuarios`, `semEmprestimo`)
 
 ### 2.4. Tratamento de Situações Inválidas (Mínimo de 5 Situações)
 - [x] **Situação 1 (Acervo)**: Buscar livro inexistente no acervo $\to$ retorna construtor de erro `livroInexistente`
 - [x] **Situação 2 (Acervo)**: Buscar livro em acervo inconsistente com ID duplicado $\to$ retorna `livroDuplicado`
 - [x] **Situação 3 (Acervo/Usuários)**: Tentar remover elemento inexistente $\to$ preserva a coleção intacta de forma idempotente
-- [x] **Situação 4 (Acervo/Usuários)**: Tentar adicionar elemento com ID já existente $\to$ não duplica o ID na coleção
+- [x] **Situação 4 (Acervo/Usuários)**: Tentar adicionar elemento com ID já existente ou inválido $\to$ não adiciona o elemento à coleção
 - [x] **Situação 5 (Empréstimo)**: Tentar devolver livro que não está registrado como emprestado $\to$ preserva a coleção inalterada
-- [ ] **Situações inválidas no nível global da Biblioteca** *(pendente implementação das transições guardadas)*:
-  - [ ] Emprestar livro que não pertence ao acervo
-  - [ ] Emprestar livro já emprestado
-  - [ ] Emprestar livro para usuário não registrado
-  - [ ] Usuário tentar devolver livro não emprestado a ele
-  - [ ] Tentar remover do acervo livro que se encontra emprestado
-  - [ ] Tentar remover usuário que possui empréstimos pendentes
+- [x] **Situações inválidas no nível global da Biblioteca** *(verificadas em `teste-transicoes-biblioteca.cafe`)*:
+  - [x] Emprestar livro que não pertence ao acervo
+  - [x] Emprestar livro já emprestado
+  - [x] Emprestar livro para usuário não registrado
+  - [x] Usuário tentar devolver livro não emprestado a ele
+  - [x] Tentar remover do acervo livro que se encontra emprestado
+  - [x] Tentar remover usuário que possui empréstimos pendentes
 
 ### 2.5. Parte Experimental e Testes de Reescrita
 - [x] Implementação de termos de teste cobrindo operações básicas e projeções (`demo.cafe` - Partes 1 a 5)
 - [x] Implementação de termos cobrindo operações compostas e cardinalidade (`demo.cafe` e `teste-estado-biblioteca.cafe`)
 - [x] Casos inválidos testados via reescrita (`livroInexistente`, `livroDuplicado`, remoção de ausente)
-- [x] Suíte de testes automatizados com 101 asserções booleanas cobrindo todas as leis algébricas e observadores (`testes.cafe` e `scripts/testar.py` passando 100%)
-- [ ] Exemplos de reescrita cobrindo as transições globais de estado da biblioteca com bloqueio de operações inválidas
+- [x] Suíte de testes automatizados com 165 asserções booleanas cobrindo todas as leis algébricas, observadores, transições de estado e invariantes (`testes.cafe` e `scripts/testar.py` passando 100%)
+- [x] Exemplos de reescrita cobrindo as transições globais de estado da biblioteca com bloqueio de operações inválidas (`teste-transicoes-biblioteca.cafe`)
 
 ### 2.6. Relatório Final e Análise
 - [ ] Justificativa formal da escolha dos sorts e operadores monoidais

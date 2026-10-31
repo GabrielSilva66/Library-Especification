@@ -36,9 +36,9 @@ mod! COLECAO-USUARIOS {
 
     -- Adiciona um usuário à coleção, sem duplicatas
     eq adicionarUsuario(U, US) = 
-        if pertence?(id(U), US) 
-        then US 
-        else U US 
+        if not(pertence?(id(U), US)) and valido?(U)
+        then U US  
+        else US
         fi .
 
     -- Remove todas as ocorrências do ID, inclusive com atributos diferentes.
