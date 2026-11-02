@@ -1,0 +1,287 @@
+\documentclass[a4paper,12pt]{article}
+
+% Pacotes básicos
+\usepackage{fontspec}
+\setmainfont{Latin Modern Roman}
+
+\usepackage{polyglossia}
+\setmainlanguage{portuguese}
+
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{setspace}
+\usepackage{tabularx}
+\usepackage{booktabs}
+\usepackage{array}
+
+% Configuração das margens
+\geometry{top=3cm,bottom=2cm,left=3cm,right=2cm}
+
+% Comando para adicionar a Fonte nas figuras (Padrão ABNT)
+\newcommand{\fonte}[1]{
+    \vspace{-0.2cm} \begin{center} \small \textbf{Fonte:} #1 \end{center}
+}
+
+% Configuração para códigos
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour}, commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta}, numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple}, basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false, breaklines=true, captionpos=b, keepspaces=true,
+    numbers=left, numbersep=5pt, showspaces=false, showstringspaces=false,
+    showtabs=false, tabsize=2
+}
+
+\lstset{style=mystyle}
+\title{\textbf{Especificação Algébrica de Sistema de Biblioteca em CafeOBJ}}
+\author{Seu Nome Aqui}
+\date{Natal, \today}
+
+\begin{document}
+
+\begin{center}
+    \thispagestyle{empty}
+    \includegraphics[scale=0.05]{Imagens/ufrn-brasao.png}
+
+    \textbf{\large Universidade Federal do Rio Grande do Norte}\\
+    \textbf{\large Estruturas Algbricas DIM0167 - 2026.2} \\
+    [1cm]
+    \vspace*{2cm}
+    {\Huge {Especificação Algébrica de Sistema de Biblioteca em CafeOBJ}}
+    \\[0.5cm]
+    \large Amauri Lacerda de Brito Junior \\
+    \large Kael Amir Pina Paraguassu Silva \\
+    \large Gabriel Victor da Silva \\
+    \large Pedro Lucas Medeiros do Nascimento \\
+    \large Samuel Morais da Rocha e Silva \\
+    [1cm]
+    \vfill
+    \normalsize Natal, \today.
+\end{center}
+
+\newpage
+
+\section{Introdução}
+
+\section{Visão Geral do Sistema e Regras de Negócio}
+
+O sistema de biblioteca é composto por três coleções principais:
+\begin{itemize}
+    \item Acervo: multiconjunto de livros pertencentes à biblioteca.
+    \item Usuários: multiconjunto de usuários registrados.
+    \item Empréstimos: multiconjunto de pares (livro, usuário) que representam
+          empréstimos ativos.
+\end{itemize}
+
+Cada livro possui um identificador único (LivroId), uma obra associada (ObraId),
+título, autor e ano. Cada usuário possui identificador único (UsuarioId), nome e
+e-mail. As regras de negócio definidas são:
+
+\begin{enumerate}
+    \item Um livro não pode ser emprestado se já estiver emprestado.
+    \item A devolução de um livro deve torná-lo novamente disponível.
+    \item Um usuário só pode devolver um livro que esteja emprestado a ele.
+    \item A remoção de um livro só é permitida quando ele estiver disponível.
+    \item A identificação de cada livro deve ser única.
+    \item A quantidade de livros disponíveis mais a quantidade de livros
+          emprestados deve ser igual à quantidade total de livros do acervo.
+    \item Essas regras são garantidas por guardas nas transições de estado e por
+          predicados de consistência global (valido? e emprestimosValidos?).
+\end{enumerate}
+
+Para garantir tais regras, foram declaradas guardas nas transições de estados
+predicados de consistência global; como \texttt{valido?} e
+\texttt{emprestimosValidos?}
+
+\section{Assinatura}
+
+\subsection{\textit{Sorts} e \textit{Subsorts}}
+
+A especificação declara os seguintes \textit{sorts} e \textit{subsorts}:
+\begin{itemize}
+    \item \texttt{LivroId}, \texttt{UsuarioId}, \texttt{ObraId}: identificadores
+          atômicos.
+    \item \texttt{Livro}, \texttt{Usuario}: entidades.
+    \item \texttt{Acervo}, \texttt{ConjuntoUsuarios},
+          \texttt{ConjuntoEmprestimos}: coleções monoidais.
+    \item \texttt{Emprestimo}: relação livro–usuário.
+    \item \texttt{Biblioteca}: estado global visível.
+    \item \texttt{LivroOuErro}: \textit{supersort} que inclui Livro e os
+          construtores de erro \texttt{livroInexistente} e
+          \texttt{livroDuplicado}.
+    \item Subsorts: Livro < LivroOuErro, Livro < Acervo, Usuario <
+          ConjuntoUsuarios, Emprestimo < ConjuntoEmprestimos.
+\end{itemize}
+
+\subsection{Operadores e Construtores}
+
+\subsection{Variáveis}
+
+\section{Estruturas de Dados}
+
+\section{Equações}
+
+\subsection{Acervo}
+
+\subsection{Empréstimos e devoluções}
+
+\subsection{Transições globais}
+
+\subsection{Invariantes globais}
+
+\section{Tratamento de estados inválidos}
+
+\subsection{Busca por livro inexistente}
+
+\subsection{Busca por livro com ID duplicado}
+
+\subsection{Remoção de entidade inexistente}
+
+\subsection{Adição de elemento inválido ou com ID inexistente}
+
+\subsection{Devolução de livro não emprestado}
+
+\subsection{Estados inválidos em nível global}
+
+\section{Termos de teste}
+
+Conforme os requisitos do trabalho, foram desenvolvidos os termos de teste
+agregados na Tabela~\ref{tab:termos}, cobrindo as operações básicas e compostas,
+casos inválidos e aplicação das regras de negócio.
+
+\begin{table}[htbp]
+    \centering
+    \small
+    \renewcommand{\arraystretch}{1.2}
+    \caption{Termos de teste e resultados esperados.}
+    \label{tab:termos}
+    \begin{tabular}{@{} c p{0.55\textwidth} p{0.35\textwidth} @{}}
+        \toprule
+        \# & Termo de teste                                                                             & Resultado esperado                           \\
+        \midrule
+        1  & \texttt{qtdAcervo(adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))}           & \texttt{1}                                   \\
+        2  & \texttt{pertenceAcervo?(l1, adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))} & \texttt{true}                                \\
+        3  & \texttt{buscarLivro(l2, adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))}     & \texttt{livroInexistente}                    \\
+        4  & \texttt{qtdUsuarios(adicionarUsuario(usuario(u1, "Ana", "ana@x"), vazioUsuarios))}         & \texttt{1}                                   \\
+        5  & \texttt{emprestado?(l1, emprestar(l1, u1))}                                                & \texttt{true}                                \\
+        6  & \texttt{temLivro?(u1, l1, emprestar(l1, u1))}                                              & \texttt{true}                                \\
+        7  & \texttt{disponivel?(l1, emprestarLivro(l1, u1, B))}                                        & \texttt{false} (após empréstimo válido)      \\
+        8  & \texttt{qtdEmprestimos(emprestarLivro(l1, u1, B))}                                         & \texttt{1}                                   \\
+        9  & \texttt{emprestarLivro(l1, u2, B)} com \texttt{u2} não registrado                          & \texttt{B} (inalterada)                      \\
+        10 & \texttt{removerLivro(l1, emprestarLivro(l1, u1, B))}                                       & \texttt{B} (livro emprestado não é removido) \\
+        11 & \texttt{devolverLivro(l1, u2, B)} com empréstimo de \texttt{u1}                            & \texttt{B} (inalterada)                      \\
+        12 & \texttt{qtdDisponiveis(B)} + \texttt{qtdEmprestimos(B)}                                    & \texttt{qtdAcervo(B)} (invariante)           \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\section{Análise da especificação}
+
+\subsection{Justificativa dos \textit{sorts} e operadores}
+
+Os \textit{sorts} \texttt{LivroId, UsuarioId e ObraId} foram separados para
+garantir unicidade e evitar confusão entre identificadores de naturezas
+distintas. \texttt{Livro} e \texttt{Usuario} são entidades com construtores e
+projeções, permitindo validação (\texttt{valido?}) e consultas. As coleções
+foram modeladas como monóides comutativos, já que a ordem dos elementos não é
+relevante para as consultas, e a composição é naturalmente associativa e
+comutativa. O \textit{sort} \texttt{Biblioteca} consolida o estado global e
+permite transições atômicas e guardadas.
+
+\subsection{Representatividade do modelo}
+
+A especificação representa as principais características do sistema: acervo,
+usuários, empréstimos, disponibilidade, pertinência, contagens e regras de
+negócio. As transições globais refletem o ciclo de vida de um livro (registro,
+empréstimo, devolução, remoção) e de um usuário (registro, remoção
+condicionada). As invariantes \texttt{valido?} e \texttt{emprestimosValidos?}
+capturam a consistência global.
+
+\subsection{Características não representadas}
+
+Algumas características do mundo real não foram modeladas, por não serem
+exigidas pelo escopo mínimo:
+
+\begin{enumerate}
+    \item datas de empréstimo e devolução, prazos e multas;
+    \item limites de quantidade de empréstimos por usuário;
+    \item reservas e filas de espera;
+    \item histórico de empréstimos encerrados;
+    \item informações bibliográficas mais específicas (editora, edição etc).
+\end{enumerate}
+
+Essas extensões poderiam ser incorporadas com novos \textit{sorts} e equações,
+sem alterar a estrutura das coleções.
+
+\subsection{Propriedades matemáticas expressas}
+
+A especificação expressa:
+
+\begin{itemize}
+    \item Monóides comutativos para acervo, usuários e empréstimos, com
+          identidade e associatividade;
+
+    \item Idempotência de filtros e remoções quando o elemento não existe;
+    \item Conservação de cardinalidade:
+          \texttt{qtdDisponiveis(B) + qtdEmprestimos(B) = qtdAcervo(B);}
+
+    \item Unicidade de identificadores via \texttt{idsUnicos?};
+
+    \item Validade global via \texttt{valido?}.
+\end{itemize}
+
+\subsection{Representação e mitigação de operações inválidas}
+
+As operações inválidas são tratadas de maneiras distintas nas diferentes partes
+do sistema:
+
+\begin{itemize}
+    \item Consultas ao acervo: No módulo \texttt{acervo.mod}, é utilizado o
+          \textit{supersort} \texttt{LivroOuErro} que inclui dois construtores
+          de erro: \texttt{livroInexistente}, retornado pela busca a um livro
+          cujo ID não existe no acervo; e \texttt{livroDuplicado}), se o ID
+          consultado ocorre múltiplas vezes; Essa decisão permite distinguir a
+          ausência, presença ou quebra da unicidade de um livro a partir de um
+          tipo bem definido.
+
+    \item Guardas nos modificadores de coleção: Os modificadores são guardados
+          por equações que, mediante falha na pré-condição, retornam a coleção
+          original. Desta forma, todas as operações são totais a nível de
+          coleção. Este comportamento foi implementado nas operações.
+          \begin{itemize}
+              \item Adição de livros e usuários: Insere apenas se o objeto -
+                    livro ou usuário - é válido e se seu ID já não pertence à
+                    coleção; se falhar nestas condições, devolve a coleção.
+
+              \item Remoção de livros e usuários: Se o ID do objeto não existe,
+                    retorna o estado atual da coleção. Essa abordagem torna a
+                    operação idempotente.
+
+              \item Devolução de livros: preserva a coleção de empréstimos
+                    empréstimo não está presente.
+          \end{itemize}
+
+    \item Guardas nas transições globais: No módulo de \texttt{Biblioteca}, as
+          transições globais são verificadas por meio de observadores,
+          \texttt{disponivel?, usuarioRegistrado? e temLivro?}; se não são
+          satisfeitos, a bibioteca original é retornada. Tal como nos
+          modificadores de coleção, esta abordagem faz o sistema total e seguro,
+          pois a partir de um estado válido, nenhuma transação levaria a um
+          inválido.
+\end{itemize}
+
+A suíte de testes verifica que, após qualquer tentativa inválida, o estado
+permanece inalterado e os invariantes continuam válidos.
+\end{document}
