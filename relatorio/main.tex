@@ -1,11 +1,18 @@
 \documentclass[a4paper,12pt]{article}
 
 % Pacotes básicos
-\usepackage{fontspec}
-\setmainfont{Latin Modern Roman}
-
-\usepackage{polyglossia}
-\setmainlanguage{portuguese}
+\usepackage{iftex}
+\ifPDFTeX
+    \usepackage[utf8]{inputenc}
+    \usepackage[T1]{fontenc}
+    \usepackage{lmodern}
+    \usepackage[portuguese]{babel}
+\else
+    \usepackage{fontspec}
+    \setmainfont{Latin Modern Roman}
+    \usepackage{polyglossia}
+    \setmainlanguage{portuguese}
+\fi
 
 \usepackage{graphicx}
 \usepackage{geometry}
@@ -20,6 +27,15 @@
 \usepackage{tabularx}
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{indentfirst}
+
+% Recuo da primeira linha, inclusive após títulos de seções
+\setlength{\parindent}{1.25cm}
+% Flexibilidade adicional para acomodar termos técnicos sem ultrapassar margens
+\setlength{\emergencystretch}{2em}
+
+% Coluna de largura ajustável com quebras de linha e alinhamento à esquerda
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 
 % Configuração das margens
 \geometry{top=3cm,bottom=2cm,left=3cm,right=2cm}
@@ -75,6 +91,12 @@
 
 \section{Introdução}
 
+Este trabalho apresenta uma especificação algébrica de um sistema de biblioteca
+em CafeOBJ. O modelo descreve livros, usuários e empréstimos por meio de tipos,
+operadores e equações, com foco nas regras de negócio e na consistência do estado.
+A validação experimental utiliza redução de termos e testes de operações válidas
+e inválidas.
+
 \section{Visão Geral do Sistema e Regras de Negócio}
 
 O sistema de biblioteca é composto por três coleções principais:
@@ -90,20 +112,28 @@ título, autor e ano. Cada usuário possui identificador único (UsuarioId), nom
 e-mail. As regras de negócio definidas são:
 
 \begin{enumerate}
+    \item Um livro só pode ser emprestado se pertencer ao acervo.
     \item Um livro não pode ser emprestado se já estiver emprestado.
     \item A devolução de um livro deve torná-lo novamente disponível.
     \item Um usuário só pode devolver um livro que esteja emprestado a ele.
     \item A remoção de um livro só é permitida quando ele estiver disponível.
-    \item A identificação de cada livro deve ser única.
-    \item A quantidade de livros disponíveis mais a quantidade de livros
-          emprestados deve ser igual à quantidade total de livros do acervo.
-    \item Essas regras são garantidas por guardas nas transições de estado e por
-          predicados de consistência global (valido? e emprestimosValidos?).
+    \item As identificações de livros e usuários devem ser únicas em suas
+          respectivas coleções.
+    \item Em um estado válido, a quantidade de livros disponíveis mais a
+          quantidade de livros emprestados deve ser igual ao total do acervo.
+    \item Um empréstimo exige que o usuário esteja registrado.
+    \item Um usuário só pode ser removido se não possuir empréstimos ativos.
+    \item O cadastro exige livro com título e autor não vazios e ano positivo,
+          ou usuário com nome e e-mail não vazios, além de ID ainda não cadastrado.
 \end{enumerate}
 
-Para garantir tais regras, foram declaradas guardas nas transições de estados
-predicados de consistência global; como \texttt{valido?} e
-\texttt{emprestimosValidos?}
+As transições globais aplicam essas condições por meio de guardas; quando uma
+condição falha, preservam o estado recebido. Os predicados \texttt{valido?} e
+\texttt{emprestimosValidos?} permitem consultar a consistência do estado.
+Um usuário pode possuir vários exemplares simultaneamente. \texttt{LivroId}
+identifica o exemplar físico, enquanto \texttt{ObraId} pode ser compartilhado por
+exemplares da mesma obra. O catálogo oferece busca por ID, título e autor, além
+da contagem de exemplares por obra.
 
 \section{Assinatura}
 
@@ -127,19 +157,306 @@ A especificação declara os seguintes \textit{sorts} e \textit{subsorts}:
 
 \subsection{Operadores e Construtores}
 
+As tabelas abaixo agrupam a assinatura por módulo. C indica construtor
+(\texttt{constr}); D indica operador definido por equações. A sequência à
+esquerda de $\to$ informa os tipos dos argumentos e sua quantidade; uma
+sequência vazia indica aridade zero. Predicados retornam \texttt{Bool}.
+Para compactar as tabelas, utilizam-se as abreviações de tipos:
+\(LI=\texttt{LivroId}\), \(UI=\texttt{UsuarioId}\),
+\(OI=\texttt{ObraId}\), \(L=\texttt{Livro}\),
+\(U=\texttt{Usuario}\), \(A=\texttt{Acervo}\),
+\(US=\texttt{ConjuntoUsuarios}\), \(ES=\texttt{ConjuntoEmprestimos}\),
+\(B=\texttt{Biblioteca}\), \(R=\texttt{LivroOuErro}\),
+\(S=\texttt{String}\), \(N=\texttt{Nat}\) e \(Q=\texttt{Bool}\).
+Os tipos \texttt{String}, \texttt{Nat} e \texttt{Bool} são importados da
+biblioteca padrão. \texttt{IDENTIFICADORES} declara apenas os três tipos de IDs;
+as constantes concretas são introduzidas nos exemplos.
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}Y l c@{}}
+\toprule
+Operador (módulos LIVRO e USUARIO) & Assinatura & Tipo \\
+\midrule
+\texttt{livro} & $LI\;OI\;S\;S\;N\to L$ & C \\
+\texttt{usuario} & $UI\;S\;S\to U$ & C \\
+\texttt{id} & $L\to LI$; $U\to UI$ & D \\
+\texttt{obra}; \texttt{ano} & $L\to OI$; $L\to N$ & D \\
+\texttt{titulo}, \texttt{autor} & $L\to S$ & D \\
+\texttt{nome}, \texttt{email} & $U\to S$ & D \\
+\texttt{valido?} & $L\to Q$; $U\to Q$ & D \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}Y l c@{}}
+\toprule
+Operador (módulo ACERVO) & Assinatura & Tipo \\
+\midrule
+\texttt{vazioAcervo}; \texttt{\_\_} & $\to A$; $A\;A\to A$ & C \\
+\texttt{livroInexistente}, \texttt{livroDuplicado} & $\to R$ & C \\
+\texttt{iniciarAcervo} & $\to A$ & D \\
+\texttt{adicionarLivro} & $L\;A\to A$ & D \\
+\texttt{removerDoAcervo}, \texttt{filtrarId} & $LI\;A\to A$ & D \\
+\texttt{buscarLivro}; \texttt{resultadoBusca} & $LI\;A\to R$; $A\to R$ & D \\
+\texttt{buscarTitulo}, \texttt{tituloDeAutor} & $S\;A\to A$ & D \\
+\texttt{qtdAcervo}; \texttt{qtdExemplaresObra} & $A\to N$; $OI\;A\to N$ & D \\
+\texttt{pertenceAcervo?} & $LI\;A\to Q$ & D \\
+\texttt{idsUnicos?}, \texttt{todosValidos?} & $A\to Q$ & D \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}Y l c@{}}
+\toprule
+Operador (módulo COLECAO-USUARIOS) & Assinatura & Tipo \\
+\midrule
+\texttt{vazioUsuarios}; \texttt{\_\_} & $\to US$; $US\;US\to US$ & C \\
+\texttt{iniciarColecao} & $\to US$ & D \\
+\texttt{adicionarUsuario} & $U\;US\to US$ & D \\
+\texttt{removerUsuario} & $UI\;US\to US$ & D \\
+\texttt{qtdUsuarios} & $US\to N$ & D \\
+\texttt{pertence?} & $UI\;US\to Q$ & D \\
+\texttt{idsUnicos?}, \texttt{todosValidos?} & $US\to Q$ & D \\
+\midrule
+Operador (módulo EMPRESTIMO) & Assinatura & Tipo \\
+\midrule
+\texttt{semEmprestimo}; \texttt{\_\_} & $\to ES$; $ES\;ES\to ES$ & C \\
+\texttt{emprestar} (registro de empréstimo) & $LI\;UI\to ES$ & C \\
+\texttt{iniciarEmprestimos} & $\to ES$ & D \\
+\texttt{emprestar} (inserção na coleção) & $LI\;UI\;ES\to ES$ & D \\
+\texttt{devolver} & $LI\;ES\to ES$ & D \\
+\texttt{qtdEmprestimos} & $ES\to N$ & D \\
+\texttt{emprestado?} & $LI\;ES\to Q$ & D \\
+\texttt{temLivro?} & $UI\;LI\;ES\to Q$; $UI\;ES\to Q$ & D \\
+\texttt{livrosUnicos?} & $ES\to Q$ & D \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
+\begin{center}
+\small
+\begin{tabularx}{\linewidth}{@{}Y l c@{}}
+\toprule
+Operador (módulo BIBLIOTECA) & Assinatura & Tipo \\
+\midrule
+\texttt{biblioteca}; \texttt{bibliotecaVazia} & $A\;US\;ES\to B$; $\to B$ & C; D \\
+\texttt{acervo}; \texttt{usuarios}; \texttt{emprestimos} & $B\to A$; $B\to US$; $B\to ES$ & D \\
+\texttt{registrarLivro}; \texttt{removerLivro} & $L\;B\to B$; $LI\;B\to B$ & D \\
+\texttt{registrarUsuario}; \texttt{removerUsuario} & $U\;B\to B$; $UI\;B\to B$ & D \\
+\texttt{emprestarLivro}, \texttt{devolverLivro} & $LI\;UI\;B\to B$ & D \\
+\texttt{qtdAcervo}, \texttt{qtdUsuarios}, \texttt{qtdEmprestimos}, \texttt{qtdDisponiveis} & $B\to N$ & D \\
+\texttt{buscarLivro} & $LI\;B\to R$ & D \\
+\texttt{buscarTitulo}, \texttt{tituloDeAutor} & $S\;B\to A$ & D \\
+\texttt{qtdExemplaresObra} & $OI\;B\to N$ & D \\
+\texttt{contarDisponiveis} & $A\;ES\to N$ & D \\
+\texttt{pertenceAcervo?}, \texttt{emprestado?}, \texttt{disponivel?} & $LI\;B\to Q$ & D \\
+\texttt{usuarioRegistrado?} & $UI\;B\to Q$ & D \\
+\texttt{temLivro?} & $UI\;LI\;B\to Q$; $UI\;B\to Q$ & D \\
+\texttt{emprestimosValidos?}, \texttt{valido?} & $B\to Q$ & D \\
+\bottomrule
+\end{tabularx}
+\end{center}
+
 \subsection{Variáveis}
+
+As equações utilizam variáveis tipadas, quantificadas universalmente em seus
+respectivos módulos. A tabela reúne as variáveis empregadas neste relatório;
+alguns nomes locais foram uniformizados para evitar ambiguidades entre módulos.
+As abreviações de tipos das tabelas anteriores não constituem declarações de
+variáveis em CafeOBJ.
+
+\begin{center}
+\small
+\begin{tabular}{@{}ll@{}}
+\toprule
+Declaração CafeOBJ & Papel \\
+\midrule
+\texttt{vars L L' : Livro .} & Exemplares \\
+\texttt{var U : Usuario .} & Usuário \\
+\texttt{vars LID LID2 : LivroId .} & Identificadores de exemplares \\
+\texttt{var UID : UsuarioId .} & Identificador de usuário \\
+\texttt{var OID : ObraId .} & Identificador de obra \\
+\texttt{vars T AUT NOM EMAIL : String .} & Atributos textuais \\
+\texttt{var ANO : Nat .} & Ano de publicação \\
+\texttt{var A : Acervo .} & Coleção de livros \\
+\texttt{var US : ConjuntoUsuarios .} & Coleção de usuários \\
+\texttt{var ES : ConjuntoEmprestimos .} & Coleção de empréstimos \\
+\texttt{var B : Biblioteca .} & Estado global \\
+\bottomrule
+\end{tabular}
+\end{center}
 
 \section{Estruturas de Dados}
 
+Os módulos de entidades utilizam \texttt{IDENTIFICADORES}; \texttt{ACERVO}
+utiliza \texttt{LIVRO}, \texttt{COLECAO-USUARIOS} utiliza \texttt{USUARIO}, e
+\texttt{EMPRESTIMO} relaciona IDs de exemplares e usuários. O módulo
+\texttt{BIBLIOTECA} integra as três coleções em um estado visível.
+
+Cada coleção é um monóide comutativo. O operador binário \texttt{\_\_}
+representa composição por justaposição: \texttt{L A}, por exemplo, reúne um
+livro e um acervo. Seus atributos \texttt{assoc}, \texttt{comm} e \texttt{id:}
+expressam associatividade, comutatividade e elemento neutro. Os neutros são
+\texttt{vazioAcervo}, \texttt{vazioUsuarios} e \texttt{semEmprestimo}.
+Assim, agrupamento e ordem não alteram a coleção; repetições são conservadas
+e contadas. As inclusões por subsorts permitem usar um \texttt{Livro} ou um
+\texttt{Usuario} como coleção unitária. O construtor de empréstimo produz
+diretamente um \texttt{ConjuntoEmprestimos}.
+
+O estado global é a tripla \texttt{biblioteca(\allowbreak{}A,\allowbreak{} US,\allowbreak{} ES)}. Suas projeções
+recuperam os componentes sem modificá-los:
+\begin{lstlisting}
+eq bibliotecaVazia = biblioteca(vazioAcervo, vazioUsuarios, semEmprestimo) .
+eq acervo(biblioteca(A, US, ES)) = A .
+eq usuarios(biblioteca(A, US, ES)) = US .
+eq emprestimos(biblioteca(A, US, ES)) = ES .
+\end{lstlisting}
+
 \section{Equações}
+
+Em CafeOBJ, \texttt{eq} declara uma igualdade usada na redução de termos;
+\texttt{if ... then ... else ... fi} seleciona o resultado conforme uma
+condição booleana. As projeções de entidades recuperam os campos de seus
+construtores, como \texttt{id(\allowbreak{}livro(\allowbreak{}LID,\allowbreak{} OID,\allowbreak{} T,\allowbreak{} AUT,\allowbreak{} ANO)) = LID}.
+As validações locais são:
+\begin{lstlisting}
+eq valido?(livro(LID, OID, T, AUT, ANO)) =
+  (T =/= "") and (AUT =/= "") and (ANO > 0) .
+eq valido?(usuario(UID, NOM, EMAIL)) =
+  (NOM =/= "") and (EMAIL =/= "") .
+\end{lstlisting}
 
 \subsection{Acervo}
 
+As equações abaixo representam inserção guardada, remoção de todas as
+ocorrências de um ID e contagem recursiva, incluindo o caso vazio:
+\begin{lstlisting}
+eq adicionarLivro(L, A) =
+  if not(pertenceAcervo?(id(L), A)) and valido?(L)
+  then L A else A fi .
+eq removerDoAcervo(LID, vazioAcervo) = vazioAcervo .
+eq removerDoAcervo(LID, L A) =
+  if LID == id(L) then removerDoAcervo(LID, A)
+  else L removerDoAcervo(LID, A) fi .
+eq qtdAcervo(vazioAcervo) = 0 .
+eq qtdAcervo(L A) = 1 + qtdAcervo(A) .
+\end{lstlisting}
+
+A busca filtra o ID e distingue ausência, resultado único e duplicidade:
+\begin{lstlisting}
+eq buscarLivro(LID, A) = resultadoBusca(filtrarId(LID, A)) .
+eq filtrarId(LID, vazioAcervo) = vazioAcervo .
+eq filtrarId(LID, L A) =
+  if LID == id(L) then L filtrarId(LID, A)
+  else filtrarId(LID, A) fi .
+eq resultadoBusca(vazioAcervo) = livroInexistente .
+eq resultadoBusca(L) = L .
+eq resultadoBusca(L L' A) = livroDuplicado .
+\end{lstlisting}
+
+\texttt{buscarTitulo} e \texttt{tituloDeAutor} também filtram o acervo, por
+igualdade de título ou autor; devolvem \texttt{vazioAcervo} quando não há
+correspondência. \texttt{qtdExemplaresObra} conta os livros com o
+\texttt{ObraId} informado. A coleção de usuários segue a mesma recursão de
+inserção, remoção e contagem, com \texttt{vazioUsuarios} como caso base e
+\texttt{pertence?} para verificar o ID; a inserção também exige
+\texttt{valido?(\allowbreak{}U)}. A remoção de um ID ausente preserva a coleção.
+
 \subsection{Empréstimos e devoluções}
+
+Na coleção de empréstimos, a inserção evita repetir o mesmo par livro--usuário;
+a devolução remove os registros do exemplar. As restrições relativas ao acervo
+e ao cadastro são aplicadas pelas transições globais.
+\begin{lstlisting}
+eq emprestar(LID, UID, ES) =
+  if temLivro?(UID, LID, ES) then ES
+  else emprestar(LID, UID) ES fi .
+eq devolver(LID, semEmprestimo) = semEmprestimo .
+eq devolver(LID, emprestar(LID2, UID) ES) =
+  if LID == LID2 then devolver(LID, ES)
+  else emprestar(LID2, UID) devolver(LID, ES) fi .
+eq qtdEmprestimos(semEmprestimo) = 0 .
+eq qtdEmprestimos(emprestar(LID, UID) ES) = 1 + qtdEmprestimos(ES) .
+\end{lstlisting}
+
+\texttt{emprestado?} procura o ID do livro; \texttt{temLivro?} procura um par
+usuário--livro, ou qualquer empréstimo do usuário na versão de dois argumentos.
+Esses predicados retornam \texttt{false} sobre a coleção vazia.
 
 \subsection{Transições globais}
 
+As seis transições recebem um estado e produzem outro. Os registros delegam às
+inserções guardadas das coleções; as remoções exigem livro disponível ou usuário
+sem empréstimos. Emprestar exige disponibilidade e cadastro, enquanto devolver
+exige que o livro esteja com o usuário informado.
+\begin{lstlisting}
+eq registrarLivro(L, biblioteca(A, US, ES)) =
+  biblioteca(adicionarLivro(L, A), US, ES) .
+eq registrarUsuario(U, biblioteca(A, US, ES)) =
+  biblioteca(A, adicionarUsuario(U, US), ES) .
+eq removerLivro(LID, biblioteca(A, US, ES)) =
+  if disponivel?(LID, biblioteca(A, US, ES))
+  then biblioteca(removerDoAcervo(LID, A), US, ES)
+  else biblioteca(A, US, ES) fi .
+eq removerUsuario(UID, biblioteca(A, US, ES)) =
+  if not(temLivro?(UID, ES))
+  then biblioteca(A, removerUsuario(UID, US), ES)
+  else biblioteca(A, US, ES) fi .
+eq emprestarLivro(LID, UID, biblioteca(A, US, ES)) =
+  if disponivel?(LID, biblioteca(A, US, ES)) and
+     usuarioRegistrado?(UID, biblioteca(A, US, ES))
+  then biblioteca(A, US, emprestar(LID, UID, ES))
+  else biblioteca(A, US, ES) fi .
+eq devolverLivro(LID, UID, biblioteca(A, US, ES)) =
+  if temLivro?(UID, LID, biblioteca(A, US, ES))
+  then biblioteca(A, US, devolver(LID, ES))
+  else biblioteca(A, US, ES) fi .
+\end{lstlisting}
+
+Os observadores globais consultam as coleções pelas projeções. Por exemplo,
+\texttt{usuarioRegistrado?(\allowbreak{}UID,\allowbreak{} B)} reduz a
+\texttt{pertence?(\allowbreak{}UID,\allowbreak{} usuarios(\allowbreak{}B))}, e \texttt{buscarTitulo(\allowbreak{}T,\allowbreak{} B)} reduz a
+\texttt{buscarTitulo(\allowbreak{}T,\allowbreak{} acervo(\allowbreak{}B))}. A disponibilidade e sua contagem são:
+\begin{lstlisting}
+eq disponivel?(LID, B) =
+  pertenceAcervo?(LID, B) and not emprestado?(LID, B) .
+eq qtdDisponiveis(B) = contarDisponiveis(acervo(B), emprestimos(B)) .
+eq contarDisponiveis(vazioAcervo, ES) = 0 .
+eq contarDisponiveis(L A, ES) =
+  if emprestado?(id(L), ES) then contarDisponiveis(A, ES)
+  else 1 + contarDisponiveis(A, ES) fi .
+\end{lstlisting}
+
 \subsection{Invariantes globais}
+
+\texttt{idsUnicos?} verifica ausência de IDs repetidos no acervo e nos usuários;
+\texttt{todosValidos?} verifica os atributos de cada entidade.
+\texttt{livrosUnicos?} impede que um exemplar apareça em mais de um registro
+de empréstimo. Esses predicados retornam \texttt{true} nas coleções vazias e
+percorrem as coleções não vazias. A consistência das referências e a validade
+global são definidas por:
+\begin{lstlisting}
+eq emprestimosValidos?(biblioteca(A, US, semEmprestimo)) = true .
+eq emprestimosValidos?(biblioteca(A, US, emprestar(LID, UID) ES)) =
+  pertenceAcervo?(LID, A) and pertence?(UID, US) and
+  emprestimosValidos?(biblioteca(A, US, ES)) .
+eq valido?(biblioteca(A, US, ES)) =
+  idsUnicos?(A) and todosValidos?(A) and
+  idsUnicos?(US) and todosValidos?(US) and
+  livrosUnicos?(ES) and emprestimosValidos?(biblioteca(A, US, ES)) .
+\end{lstlisting}
+
+Em estados válidos, cada exemplar pertence a exatamente uma das categorias
+disponível ou emprestado, e cada empréstimo corresponde a um exemplar do
+acervo. Portanto, \texttt{qtdDisponiveis(\allowbreak{}B) + qtdEmprestimos(\allowbreak{}B) = qtdAcervo(\allowbreak{}B)}.
+Os predicados permitem detectar estados inconsistentes construídos diretamente
+com \texttt{biblioteca}; as transições preservam a validade quando partem de
+um estado válido.
 
 \section{Tratamento de estados inválidos}
 
@@ -161,37 +478,94 @@ Conforme os requisitos do trabalho, foram desenvolvidos os termos de teste
 agregados na Tabela~\ref{tab:termos}, cobrindo as operações básicas e compostas,
 casos inválidos e aplicação das regras de negócio.
 
+Os exemplos usam o contexto abaixo, aberto após carregar
+\texttt{biblioteca.mod}. \texttt{bLivre} contém um livro disponível e dois
+usuários; \texttt{bEmprestada} contém o mesmo livro emprestado a Ana.
+\texttt{l2} e \texttt{ux} não estão cadastrados. Cada linha da tabela é
+avaliada independentemente, sem modificar os estados usados pelas demais.
+\begin{lstlisting}
+open BIBLIOTECA .
+ops l1 l2 : -> LivroId .
+ops u1 u2 ux : -> UsuarioId .
+op o1 : -> ObraId .
+op livro1 : -> Livro .
+ops ana bia : -> Usuario .
+ops bLivre bEmprestada : -> Biblioteca .
+eq livro1 = livro(l1, o1, "T1", "A1", 2020) .
+eq ana = usuario(u1, "Ana", "ana@x") .
+eq bia = usuario(u2, "Bia", "bia@x") .
+eq bLivre = biblioteca(livro1, ana bia, semEmprestimo) .
+eq bEmprestada = emprestarLivro(l1, u1, bLivre) .
+\end{lstlisting}
+
 \begin{table}[htbp]
     \centering
     \small
     \renewcommand{\arraystretch}{1.2}
     \caption{Termos de teste e resultados esperados.}
     \label{tab:termos}
-    \begin{tabular}{@{} c p{0.55\textwidth} p{0.35\textwidth} @{}}
+    \begin{tabularx}{\linewidth}{@{} c Y l @{}}
         \toprule
         \# & Termo de teste                                                                             & Resultado esperado                           \\
         \midrule
-        1  & \texttt{qtdAcervo(adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))}           & \texttt{1}                                   \\
-        2  & \texttt{pertenceAcervo?(l1, adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))} & \texttt{true}                                \\
-        3  & \texttt{buscarLivro(l2, adicionarLivro(livro(l1, o1, "T1", "A1", 2020), vazioAcervo))}     & \texttt{livroInexistente}                    \\
-        4  & \texttt{qtdUsuarios(adicionarUsuario(usuario(u1, "Ana", "ana@x"), vazioUsuarios))}         & \texttt{1}                                   \\
-        5  & \texttt{emprestado?(l1, emprestar(l1, u1))}                                                & \texttt{true}                                \\
-        6  & \texttt{temLivro?(u1, l1, emprestar(l1, u1))}                                              & \texttt{true}                                \\
-        7  & \texttt{disponivel?(l1, emprestarLivro(l1, u1, B))}                                        & \texttt{false} (após empréstimo válido)      \\
-        8  & \texttt{qtdEmprestimos(emprestarLivro(l1, u1, B))}                                         & \texttt{1}                                   \\
-        9  & \texttt{emprestarLivro(l1, u2, B)} com \texttt{u2} não registrado                          & \texttt{B} (inalterada)                      \\
-        10 & \texttt{removerLivro(l1, emprestarLivro(l1, u1, B))}                                       & \texttt{B} (livro emprestado não é removido) \\
-        11 & \texttt{devolverLivro(l1, u2, B)} com empréstimo de \texttt{u1}                            & \texttt{B} (inalterada)                      \\
-        12 & \texttt{qtdDisponiveis(B)} + \texttt{qtdEmprestimos(B)}                                    & \texttt{qtdAcervo(B)} (invariante)           \\
+        1  & \texttt{qtdAcervo(\allowbreak{}adicionarLivro(\allowbreak{}livro1,\allowbreak{} vazioAcervo))}                                   & \texttt{1}                                   \\
+        2  & \texttt{pertenceAcervo?(\allowbreak{}l1,\allowbreak{} adicionarLivro(\allowbreak{}livro1,\allowbreak{} vazioAcervo))}                         & \texttt{true}                                \\
+        3  & \texttt{buscarLivro(\allowbreak{}l2,\allowbreak{} adicionarLivro(\allowbreak{}livro1,\allowbreak{} vazioAcervo))}                             & \texttt{livroInexistente}                    \\
+        4  & \texttt{qtdUsuarios(\allowbreak{}adicionarUsuario(\allowbreak{}ana,\allowbreak{} vazioUsuarios))}                               & \texttt{1}                                   \\
+        5  & \texttt{emprestado?(\allowbreak{}l1,\allowbreak{} emprestar(\allowbreak{}l1,\allowbreak{} u1))}                                                & \texttt{true}                                \\
+        6  & \texttt{temLivro?(\allowbreak{}u1,\allowbreak{} l1,\allowbreak{} emprestar(\allowbreak{}l1,\allowbreak{} u1))}                                              & \texttt{true}                                \\
+        7  & \texttt{disponivel?(\allowbreak{}l1,\allowbreak{} emprestarLivro(\allowbreak{}l1,\allowbreak{} u1,\allowbreak{} bLivre))}                                  & \texttt{false}                               \\
+        8  & \texttt{qtdEmprestimos(\allowbreak{}emprestarLivro(\allowbreak{}l1,\allowbreak{} u1,\allowbreak{} bLivre))}                                   & \texttt{1}                                   \\
+        9  & \texttt{emprestarLivro(\allowbreak{}l1,\allowbreak{} ux,\allowbreak{} bLivre)}                                                   & \texttt{bLivre}                              \\
+        10 & \texttt{removerLivro(\allowbreak{}l1,\allowbreak{} emprestarLivro(\allowbreak{}l1,\allowbreak{} u1,\allowbreak{} bLivre))}                                 & \texttt{bEmprestada}                         \\
+        11 & \texttt{devolverLivro(\allowbreak{}l1,\allowbreak{} u2,\allowbreak{} bEmprestada)}                                               & \texttt{bEmprestada}                         \\
+        12 & \texttt{qtdDisponiveis(\allowbreak{}bEmprestada) + qtdEmprestimos(\allowbreak{}bEmprestada)}                         & \texttt{1}                                   \\
         \bottomrule
-    \end{tabular}
+    \end{tabularx}
 \end{table}
+
+Para reproduzir cada verificação, usa-se \texttt{red termo == resultado .}
+no contexto acima e, ao final, \texttt{close}. No teste 12, o total 1 também
+corresponde a \texttt{qtdAcervo(\allowbreak{}bEmprestada)}. Nos testes 9 e 11, as guardas
+recusam, respectivamente, o usuário não cadastrado e a devolução por outro
+usuário. No teste 10, o estado preservado é o posterior ao empréstimo.
+
+As sequências abaixo resumem a reescrita, com as condições já avaliadas.
+No primeiro exemplo, a inserção aceita o livro válido e a contagem chega a 1:
+\begin{lstlisting}
+qtdAcervo(adicionarLivro(livro1, vazioAcervo))
+  => qtdAcervo(livro1 vazioAcervo)
+  => 1 + qtdAcervo(vazioAcervo)
+  => 1 + 0 => 1
+\end{lstlisting}
+No segundo, o livro emprestado não pode ser removido:
+\begin{lstlisting}
+removerLivro(l1, emprestarLivro(l1, u1, bLivre))
+  => removerLivro(l1, biblioteca(livro1, ana bia, emprestar(l1, u1)))
+  => biblioteca(livro1, ana bia, emprestar(l1, u1))
+\end{lstlisting}
+A condição \texttt{disponivel?} é falsa nesse estado; o resultado é a forma
+expandida de \texttt{bEmprestada}. O símbolo \texttt{=>} apenas indica passos
+de reescrita nesta exposição, não um comando de CafeOBJ.
+
+A suíte \texttt{spec/\allowbreak{}testes.cafe}, executada por
+\texttt{python3 scripts/\allowbreak{}testar.py --homebrew} no ambiente utilizado, apresentou
+\texttt{165/\allowbreak{}165} asserções verdadeiras, com 165 reduções. Dessas, 64 pertencem
+ao arquivo \texttt{teste-\allowbreak{}transicoes-\allowbreak{}biblioteca.cafe}, que cobre transições,
+consultas e estados inconsistentes. Esse resultado verifica os casos testados.
+
+O cenário separado \texttt{spec/\allowbreak{}demo.cafe} começa com cinco exemplares e quatro
+usuários. Após empréstimos, uma tentativa de empréstimo repetido, uma devolução
+e o cadastro de outro exemplar, \texttt{biblioteca1} possui seis livros, três
+empréstimos e três disponíveis. A demonstração também consulta o catálogo,
+exercita operações recusadas e verifica \texttt{valido?}; ela não integra as
+165 asserções da suíte.
 
 \section{Análise da especificação}
 
 \subsection{Justificativa dos \textit{sorts} e operadores}
 
-Os \textit{sorts} \texttt{LivroId, UsuarioId e ObraId} foram separados para
+Os \textit{sorts} \texttt{LivroId,\allowbreak{} UsuarioId e ObraId} foram separados para
 garantir unicidade e evitar confusão entre identificadores de naturezas
 distintas. \texttt{Livro} e \texttt{Usuario} são entidades com construtores e
 projeções, permitindo validação (\texttt{valido?}) e consultas. As coleções
@@ -235,7 +609,7 @@ A especificação expressa:
 
     \item Idempotência de filtros e remoções quando o elemento não existe;
     \item Conservação de cardinalidade:
-          \texttt{qtdDisponiveis(B) + qtdEmprestimos(B) = qtdAcervo(B);}
+          \texttt{qtdDisponiveis(\allowbreak{}B) + qtdEmprestimos(\allowbreak{}B) = qtdAcervo(\allowbreak{}B);}
 
     \item Unicidade de identificadores via \texttt{idsUnicos?};
 
@@ -275,7 +649,7 @@ do sistema:
 
     \item Guardas nas transições globais: No módulo de \texttt{Biblioteca}, as
           transições globais são verificadas por meio de observadores,
-          \texttt{disponivel?, usuarioRegistrado? e temLivro?}; se não são
+          \texttt{disponivel?,\allowbreak{} usuarioRegistrado? e temLivro?}; se não são
           satisfeitos, a bibioteca original é retornada. Tal como nos
           modificadores de coleção, esta abordagem faz o sistema total e seguro,
           pois a partir de um estado válido, nenhuma transação levaria a um
