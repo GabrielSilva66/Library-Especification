@@ -1,0 +1,144 @@
+cd spec
+in colecao-usuarios.mod
+cd ..
+
+-- ============================================================
+-- Módulo auxiliar da prova
+-- ============================================================
+mod! PROVA-COLECAO-USUARIOS {
+  protecting(COLECAO-USUARIOS)
+
+  pred invValido       : ConjuntoUsuarios
+  pred lemaNaoPertence : UsuarioId UsuarioId ConjuntoUsuarios
+
+  var  US      : ConjuntoUsuarios
+  vars ID1 ID2 : UsuarioId
+
+  -- Invariante da coleção de usuários
+  eq invValido(US) = idsUnicos?(US) and todosValidos?(US) .
+
+  -- Lema auxiliar: se ID1 não pertence a US, então ID1 também não pertence a removerUsuario(ID2, US)
+  eq lemaNaoPertence(ID1, ID2, US) = (not pertence?(ID1, US)) implies (not pertence?(ID1, removerUsuario(ID2, US))) . -- TODO: Provar esse lema
+}
+
+-- ============================================================
+-- [1] INVARIANTE: Validade da coleção de usuários é preservada
+-- ============================================================
+-- ============================================================
+-- [1] Caso Base: US = iniciarColecao = vazioUsuarios
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  set trace on
+  red invValido(iniciarColecao) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Preservação por adicionarUsuario(u, us)
+-- ============================================================
+-- Caso 1: Usuário ainda não pertence e é válido (u us)
+open PROVA-COLECAO-USUARIOS .
+  op u  : -> Usuario .
+  op us : -> ConjuntoUsuarios .
+
+  -- Hipóteses:
+  eq idsUnicos?(us) = true .
+  eq todosValidos?(us) = true .
+
+  -- Condições:
+  eq pertence?(id(u), us) = false .
+  eq valido?(u) = true .
+
+  set trace on
+  red invValido(adicionarUsuario(u, us)) .
+  set trace off
+close
+
+-- Caso 2: Usuário ainda não pertence e é invalido (us)
+open PROVA-COLECAO-USUARIOS .
+  op u  : -> Usuario .
+  op us : -> ConjuntoUsuarios .
+
+  -- Hipóteses:
+  eq idsUnicos?(us) = true .
+  eq todosValidos?(us) = true .
+
+  -- Condições:
+  eq pertence?(id(u), us) = false .
+  eq valido?(u) = false .
+
+  set trace on
+  red invValido(adicionarUsuario(u, us)) .
+  set trace off
+close
+
+-- Caso 3: Usuário já pertence (us)
+open PROVA-COLECAO-USUARIOS .
+  op u  : -> Usuario .
+  op us : -> ConjuntoUsuarios .
+
+  -- Hipóteses:
+  eq idsUnicos?(us) = true .
+  eq todosValidos?(us) = true .
+
+  -- Condições:
+  eq pertence?(id(u), us) = true .
+
+  set trace on
+  red invValido(adicionarUsuario(u, us)) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Preservação por removerUsuario(id0, us)
+-- ============================================================
+-- Caso Base: US = iniciarColecao = vazioUsuarios
+open PROVA-COLECAO-USUARIOS .
+  op id0 : -> UsuarioId .
+
+  set trace on
+  red invValido(removerUsuario(id0, iniciarColecao)) .
+  set trace off
+close
+
+-- Caso indutivo: US = u us', com id(u) == id0
+open PROVA-COLECAO-USUARIOS .
+  op id0 : -> UsuarioId .
+  op u   : -> Usuario .
+  op us' : -> ConjuntoUsuarios .
+
+  -- Hipóteses:
+  eq idsUnicos?(removerUsuario(id0, us')) = true .
+  eq todosValidos?(removerUsuario(id0, us')) = true .
+
+  -- Condição do caso:
+  eq (id0 == id(u)) = true .
+
+  set trace on
+  red invValido(removerUsuario(id0, u us')) .
+  set trace off
+close
+
+-- Caso indutivo: US = u us', com id(u) != id0
+open PROVA-COLECAO-USUARIOS .
+  op id0 : -> UsuarioId .
+  op u   : -> Usuario .
+  op us' : -> ConjuntoUsuarios .
+
+  -- De invValido(u us') = true:
+  eq valido?(u) = true . 
+
+  -- Hipótese de Indução (sobre us'):
+  eq idsUnicos?(removerUsuario(id0, us')) = true .
+  eq todosValidos?(removerUsuario(id0, us')) = true .
+
+  -- Consequência de lemaNaoPertence (pois pertence?(id(u), us') = false):
+  eq pertence?(id(u), removerUsuario(id0, us')) = false .
+
+  -- Condição do caso:
+  eq (id0 == id(u)) = false .
+
+  set trace on
+  red invValido(removerUsuario(id0, u us')) .
+  set trace off
+close

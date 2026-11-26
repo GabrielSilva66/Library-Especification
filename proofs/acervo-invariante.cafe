@@ -1,0 +1,144 @@
+cd spec
+in acervo.mod
+cd ..
+
+-- ============================================================
+-- Módulo auxiliar da prova
+-- ============================================================
+mod! PROVA-ACERVO {
+  protecting(ACERVO)
+
+  pred invValido       : Acervo
+  pred lemaNaoPertence : LivroId LivroId Acervo
+
+  var  A       : Acervo
+  vars ID1 ID2 : LivroId
+
+  -- Invariante do acervo
+  eq invValido(A) = idsUnicos?(A) and todosValidos?(A) .
+
+  -- Lema auxiliar: se ID1 não pertence a A, então ID1 também não pertence a removerDoAcervo(ID2, A)
+  eq lemaNaoPertence(ID1, ID2, A) = (not pertenceAcervo?(ID1, A)) implies (not pertenceAcervo?(ID1, removerDoAcervo(ID2, A))) . -- TODO: Provar esse lema
+}
+
+-- ============================================================
+-- [1] INVARIANTE: Validade do acervo é preservada
+-- ============================================================
+-- ============================================================
+-- [1] Caso Base: A = iniciarAcervo = vazioAcervo
+-- ============================================================
+open PROVA-ACERVO .
+  set trace on
+  red invValido(iniciarAcervo) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Preservação por adicionarLivro(l, a)
+-- ============================================================
+-- Caso 1: Livro ainda não pertence e é válido (l a)
+open PROVA-ACERVO .
+  op l : -> Livro .
+  op a : -> Acervo .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = false .
+  eq valido?(l) = true .
+
+  set trace on
+  red invValido(adicionarLivro(l, a)) .
+  set trace off
+close
+
+-- Caso 2: Livro ainda não pertence e é invalido (a)
+open PROVA-ACERVO .
+  op l : -> Livro .
+  op a : -> Acervo .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = false .
+  eq valido?(l) = false .
+
+  set trace on
+  red invValido(adicionarLivro(l, a)) .
+  set trace off
+close
+
+-- Caso 3: Livro já pertence (a)
+open PROVA-ACERVO .
+  op l : -> Livro .
+  op a : -> Acervo .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = true .
+
+  set trace on
+  red invValido(adicionarLivro(l, a)) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Preservação por removerDoAcervo(id0, a)
+-- ============================================================
+-- Caso Base: A = iniciarAcervo = vazioAcervo
+open PROVA-ACERVO .
+  op id0 : -> LivroId .
+
+  set trace on
+  red invValido(removerDoAcervo(id0, iniciarAcervo)) .
+  set trace off
+close
+
+-- Caso indutivo: a = u a', com id(u) == id0
+open PROVA-ACERVO .
+  op id0 : -> LivroId .
+  op l   : -> Livro .
+  op a'  : -> Acervo .
+
+  -- Hipóteses:
+  eq idsUnicos?(removerDoAcervo(id0, a')) = true .
+  eq todosValidos?(removerDoAcervo(id0, a')) = true .
+
+  -- Condição do caso:
+  eq (id0 == id(l)) = true .
+
+  set trace on
+  red invValido(removerDoAcervo(id0, l a')) .
+  set trace off
+close
+
+-- Caso indutivo: a = u a', com id(u) != id0
+open PROVA-ACERVO .
+  op id0 : -> LivroId .
+  op l   : -> Livro .
+  op a'  : -> Acervo .
+
+  -- De invValido(l a') = true:
+  eq valido?(l) = true . 
+
+  -- Hipótese de Indução (sobre a'):
+  eq idsUnicos?(removerDoAcervo(id0, a')) = true .
+  eq todosValidos?(removerDoAcervo(id0, a')) = true .
+
+  -- Consequência de lemaNaoPertence (pois pertenceAcervo?(id(l), a') = false):
+  eq pertenceAcervo?(id(l), removerDoAcervo(id0, a')) = false .
+
+  -- Condição do caso:
+  eq (id0 == id(l)) = false .
+
+  set trace on
+  red invValido(removerDoAcervo(id0, l a')) .
+  set trace off
+close
