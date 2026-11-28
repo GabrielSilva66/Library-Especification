@@ -1,0 +1,268 @@
+cd spec
+in biblioteca.mod
+cd ..
+
+-- ============================================================
+-- Módulo auxiliar da prova
+-- ============================================================
+mod! PROVA-BIBLIOTECA {
+  protecting(BIBLIOTECA)
+
+  pred invValido : Biblioteca
+
+  var B : Biblioteca
+
+  -- Invariante de validade da biblioteca
+  eq invValido(B) = valido?(B) .
+}
+
+-- ============================================================
+-- [1] LEMA: Empréstimos válidos é preservado pela inserção de 
+-- livro
+-- ============================================================
+-- ============================================================
+-- [1] Caso Base: ES = semEmprestimo
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a  : -> Acervo .
+  op us : -> ConjuntoUsuarios .
+  op l  : -> Livro .
+
+  -- Prova:
+  set trace on
+  red emprestimosValidos?(biblioteca(l a, us, semEmprestimo)) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo:
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a   : -> Acervo .
+  op us  : -> ConjuntoUsuarios .
+  op es' : -> ConjuntoEmprestimos .
+  op lid : -> LivroId .
+  op uid : -> UsuarioId .
+  op l   : -> Livro .
+
+  -- Hipóteses:
+  eq pertenceAcervo?(lid, a) = true .
+  eq pertence?(uid, us) = true .
+
+  -- Hipótese de indução:
+  eq emprestimosValidos?(biblioteca(l a, us, es')) = true .
+
+  -- Prova:
+  set trace on
+  red emprestimosValidos?(biblioteca(l a, us, emprestar(lid, uid) es')) .
+  set trace off
+close
+
+-- ============================================================
+-- [2] LEMA: Empréstimos válidos é preservado pela remoção de 
+-- livro não emprestado
+-- ============================================================
+-- ============================================================
+-- [2] Caso Base: ES = semEmprestimo
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a   : -> Acervo .
+  op us  : -> ConjuntoUsuarios .
+  op lid : -> LivroId .
+
+  -- Prova:
+  set trace on
+  red emprestimosValidos?(biblioteca(removerDoAcervo(lid, a), us, semEmprestimo)) .
+  set trace off
+close
+
+-- ============================================================
+-- [2] Caso Indutivo:
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op  a         : -> Acervo .
+  op  us        : -> ConjuntoUsuarios .
+  op  es'       : -> ConjuntoEmprestimos .
+  ops lid1 lid2 : -> LivroId .
+  op  uid       : -> UsuarioId .
+
+  -- Hipóteses:
+  eq pertenceAcervo?(lid2, a) = true .
+  eq pertence?(uid, us) = true .
+  eq (lid1 == lid2) = false .
+  eq emprestado?(lid1, emprestar(lid2, uid) es') = false .
+
+  -- Hipótese de indução:
+  eq emprestimosValidos?(
+    biblioteca(removerDoAcervo(lid1, a), us, es')
+  ) = true .
+
+  -- Derivados de lemas:
+  eq pertenceAcervo?(lid2, removerDoAcervo(lid1, a)) = true .
+
+  -- Prova:
+  set trace on
+  red emprestimosValidos?(biblioteca(
+    removerDoAcervo(lid1, a), us, emprestar(lid2, uid) es')
+  ) .
+  set trace off
+close
+
+-- ============================================================
+-- [3] INVARIANTE: Validade da biblioteca é preservada
+-- ============================================================
+-- ============================================================
+-- [3] Caso Base: B = bibliotecaVazia
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Prova:
+  set trace on
+  red invValido(bibliotecaVazia) .
+  set trace off
+close
+
+-- ============================================================
+-- [3] Preservação por registrarLivro(l, b)
+-- ============================================================
+-- ============================================================
+-- [3] Caso indutivo (1): l not in a and l is valid
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a  : -> Acervo .
+  op us : -> ConjuntoUsuarios .
+  op es : -> ConjuntoEmprestimos .
+  op l  : -> Livro .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true . 
+  eq idsUnicos?(us) = true . 
+  eq todosValidos?(us) = true .
+  eq livrosUnicos?(es) = true .
+  eq emprestimosValidos?(biblioteca(a, us, es)) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = false .
+  eq valido?(l) = true .
+
+  -- Lemas derivados:
+  eq emprestimosValidos?(biblioteca(l a, us, es)) = true .  
+
+  -- Prova:
+  set trace on
+  red invValido(registrarLivro(l, biblioteca(a, us, es))) .
+  set trace off
+close
+
+-- ============================================================
+-- [3] Caso indutivo (2): l not in a and l is invalid
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a  : -> Acervo .
+  op us : -> ConjuntoUsuarios .
+  op es : -> ConjuntoEmprestimos .
+  op l  : -> Livro .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true . 
+  eq idsUnicos?(us) = true . 
+  eq todosValidos?(us) = true .
+  eq livrosUnicos?(es) = true .
+  eq emprestimosValidos?(biblioteca(a, us, es)) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = false .
+  eq valido?(l) = false .
+
+  -- Prova:
+  set trace on
+  red invValido(registrarLivro(l, biblioteca(a, us, es))) .
+  set trace off
+close
+
+
+-- ============================================================
+-- [3] Caso indutivo (3): l in a
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a  : -> Acervo .
+  op us : -> ConjuntoUsuarios .
+  op es : -> ConjuntoEmprestimos .
+  op l  : -> Livro .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true . 
+  eq idsUnicos?(us) = true . 
+  eq todosValidos?(us) = true .
+  eq livrosUnicos?(es) = true .
+  eq emprestimosValidos?(biblioteca(a, us, es)) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(id(l), a) = true .
+
+  -- Prova:
+  set trace on
+  red invValido(registrarLivro(l, biblioteca(a, us, es))) .
+  set trace off
+close
+
+-- ============================================================
+-- [3] Preservação por removerLivro(lid, b)
+-- ============================================================
+-- ============================================================
+-- [3] Caso indutivo (1): l in a and l is disponível
+-- ============================================================
+open PROVA-BIBLIOTECA .
+  -- Operandos:
+  op a   : -> Acervo .
+  op us  : -> ConjuntoUsuarios .
+  op es  : -> ConjuntoEmprestimos .
+  op lid : -> LivroId .
+
+  -- Hipóteses:
+  eq idsUnicos?(a) = true .
+  eq todosValidos?(a) = true . 
+  eq idsUnicos?(us) = true . 
+  eq todosValidos?(us) = true .
+  eq livrosUnicos?(es) = true .
+  eq emprestimosValidos?(biblioteca(a, us, es)) = true .
+
+  -- Condições:
+  eq pertenceAcervo?(lid, a) = true .
+  eq emprestado?(lid, es) = false .
+
+  -- Lemas derivados:
+  eq emprestimosValidos?(biblioteca(removerDoAcervo(lid, a), us, es)) = true .
+  eq idsUnicos?(removerDoAcervo(lid, a)) = true .
+  eq todosValidos?(removerDoAcervo(lid, a)) = true .
+
+  -- Prova:
+  set trace on
+  red invValido(removerLivro(lid, biblioteca(a, us, es))) .
+  set trace off
+close
+
+-- ============================================================
+-- [3] Preservação por registrarUsuario(u, b)
+-- ============================================================
+
+-- ============================================================
+-- [3] Preservação por removerUsuario(uid, b)
+-- ============================================================
+
+-- ============================================================
+-- [3] Preservação por emprestarLivro(lid, uid, b)
+-- ============================================================
+
+-- ============================================================
+-- [3] Preservação por devolverLivro(lid, uid, b)
+-- ============================================================

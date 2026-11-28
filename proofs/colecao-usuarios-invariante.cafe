@@ -9,7 +9,8 @@ mod! PROVA-COLECAO-USUARIOS {
   protecting(COLECAO-USUARIOS)
 
   pred invValido       : ConjuntoUsuarios
-  pred lemaNaoPertence : UsuarioId UsuarioId ConjuntoUsuarios
+  pred lemaPertenceRemover : UsuarioId UsuarioId ConjuntoUsuarios
+  pred lemaNaoPertenceRemover : UsuarioId UsuarioId ConjuntoUsuarios
 
   var  US      : ConjuntoUsuarios
   vars ID1 ID2 : UsuarioId
@@ -17,15 +18,253 @@ mod! PROVA-COLECAO-USUARIOS {
   -- Invariante da coleção de usuários
   eq invValido(US) = idsUnicos?(US) and todosValidos?(US) .
 
-  -- Lema auxiliar: se ID1 não pertence a US, então ID1 também não pertence a removerUsuario(ID2, US)
-  eq lemaNaoPertence(ID1, ID2, US) = (not pertence?(ID1, US)) implies (not pertence?(ID1, removerUsuario(ID2, US))) . -- TODO: Provar esse lema
+  -- Lemas auxiliares:
+  eq lemaPertenceRemover(ID1, ID2, US) = 
+    (pertence?(ID2, US) and not (ID1 == ID2)) 
+    implies pertence?(ID2, removerUsuario(ID1, US)) .
+
+  eq lemaNaoPertenceRemover(ID1, ID2, US) = 
+    (not pertence?(ID1, US)) 
+    implies (not pertence?(ID1, removerUsuario(ID2, US))) .
 }
 
 -- ============================================================
--- [1] INVARIANTE: Validade da coleção de usuários é preservada
+-- [1] LEMA: Remover um usuário da coleção de usuários não 
+-- afeta os diferentes
 -- ============================================================
 -- ============================================================
 -- [1] Caso Base: US = iniciarColecao = vazioUsuarios
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2  : -> UsuarioId .
+
+  -- Hipóteses
+  eq (id1 == id2) = false .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, vazioUsuarios) .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (1): id1 == id(u) and id2 in u us'
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)       = false .
+  eq (id1 == id(u))     = true .
+  eq (id2 == id(u))     = false .
+  eq pertence?(id2, us') = true .
+
+  -- Hipótese da indução:
+  eq pertence?(id2, removerUsuario(id1, us')) = true .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (2): id1 == id(u) and id2 not in u us'
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)        = false .
+  eq (id1 == id(u))      = true .
+  eq (id2 == id(u))      = false .
+  eq pertence?(id2, us') = false .
+  
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (3): id1 != id(u) and id2 in u us' and 
+-- id2 == id(u)
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)             = false .
+  eq (id1 == id(u))           = false .
+  eq (id2 == id(u))           = true .
+  eq pertence?(id2, us') = false .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (4): id1 != id(u) and id2 in u us' and 
+-- id2 != id(u)
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)             = false .
+  eq (id1 == id(u))           = false .
+  eq (id2 == id(u))           = false .
+  eq pertence?(id2, us') = true .
+
+  -- Hipótese da indução:
+  eq pertence?(id2, removerUsuario(id1, us')) = true .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (5): id1 != id(u) and id2 not in u us'
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)             = false .
+  eq (id1 == id(u))           = false .
+  eq (id2 == id(u))           = false .
+  eq pertence?(id2, us') = false .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [1] Caso Indutivo (6): id1 == id2
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id2)             = true .
+
+  -- Prova:
+  set trace on
+  red lemaPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [2] LEMA: Se um Usuario não pertence ao colecao-usuarios, remover 
+-- qualquer outro Usuario faz com que ele ainda não pertença
+-- ============================================================
+-- ============================================================
+-- [2] Caso Base: A = iniciarColecao = vazioUsuarios
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2  : -> UsuarioId .
+
+  -- Prova:
+  set trace on
+  red lemaNaoPertenceRemover(id1, id2, vazioUsuarios) .
+  set trace off
+close
+
+-- ============================================================
+-- [2] Caso Indutivo (1): id1 in u us'
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq pertence?(id1, u us') = true .
+
+  -- Prova:
+  set trace on
+  red lemaNaoPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [2] Caso Indutivo (2): id1 not in u us' and id2 == id(u)
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id(u))           = false .
+  eq (id2 == id(u))           = true .
+  eq pertence?(id1, us') = false .
+
+  -- Hipótese da indução:
+  eq pertence?(id1, removerUsuario(id2, us')) = false .
+
+  -- Prova:
+  set trace on
+  red lemaNaoPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [2] Caso Indutivo (3): id1 not in u us' and id2 != id(u)
+-- ============================================================
+open PROVA-COLECAO-USUARIOS .
+  -- Operandos:
+  ops id1 id2 : -> UsuarioId .
+  op  us'     : -> ConjuntoUsuarios .
+  op  u       : -> Usuario .
+
+  -- Hipóteses:
+  eq (id1 == id(u))           = false .
+  eq (id2 == id(u))           = false .
+  eq pertence?(id1, us') = false .
+
+  -- Hipótese da indução:
+  eq pertence?(id1, removerUsuario(id2, us')) = false .
+
+  -- Prova:
+  set trace on
+  red lemaNaoPertenceRemover(id1, id2, u us')  .
+  set trace off
+close
+
+-- ============================================================
+-- [3] INVARIANTE: Validade da coleção de usuários é preservada
+-- ============================================================
+-- ============================================================
+-- [3] Caso Base: US = iniciarColecao = vazioUsuarios
 -- ============================================================
 open PROVA-COLECAO-USUARIOS .
   set trace on
@@ -34,7 +273,7 @@ open PROVA-COLECAO-USUARIOS .
 close
 
 -- ============================================================
--- [1] Preservação por adicionarUsuario(u, us)
+-- [3] Preservação por adicionarUsuario(u, us)
 -- ============================================================
 -- Caso 1: Usuário ainda não pertence e é válido (u us)
 open PROVA-COLECAO-USUARIOS .
@@ -90,7 +329,7 @@ open PROVA-COLECAO-USUARIOS .
 close
 
 -- ============================================================
--- [1] Preservação por removerUsuario(id0, us)
+-- [3] Preservação por removerUsuario(id0, us)
 -- ============================================================
 -- Caso Base: US = iniciarColecao = vazioUsuarios
 open PROVA-COLECAO-USUARIOS .
